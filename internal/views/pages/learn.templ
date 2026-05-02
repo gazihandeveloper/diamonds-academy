@@ -1,0 +1,233 @@
+package pages
+
+import (
+	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/quiz"
+	"github.com/diamondsacademy/diamonds/internal/views/layouts"
+)
+
+type LearnTab struct {
+	Key   string
+	Label string
+}
+
+var LearnTabs = []LearnTab{
+	{Key: "l1", Label: "Ders 01"},
+	{Key: "l2", Label: "Ders 02"},
+	{Key: "l3", Label: "Ders 03"},
+	{Key: "file", Label: "Özel Dosya"},
+	{Key: "quiz", Label: "Quiz"},
+}
+
+type LearnProps struct {
+	Day       days.Day
+	ActiveTab string
+	UserEmail string
+	// Completed: hangi slotlar bitti
+	Completed map[string]bool
+	// Unlocked: hangi slotlar açık (sırayla açılır)
+	Unlocked map[string]bool
+	// Questions: quiz sorusu listesi (parse edilmiş)
+	Questions []quiz.Question
+}
+
+templ Learn(p LearnProps) {
+	@layouts.Base("Eğitim " + itoa2(p.Day.DayNo) + " — " + p.Day.Title) {
+		<div
+			class="min-h-screen flex flex-col bg-bg"
+			data-day-no={ itoa(p.Day.DayNo) }
+			data-active-tab={ p.ActiveTab }
+			data-user-email={ p.UserEmail }
+		>
+			<header class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+				<a href="/" class="flex items-center gap-3">
+					@layouts.DiamondLogoSm()
+					<div class="leading-tight">
+						<div class="text-[10px] tracking-[0.3em] text-brand font-bold">DIAMONDS</div>
+						<div class="text-[10px] tracking-[0.3em] text-white/60">ACADEMY</div>
+					</div>
+				</a>
+				<nav class="flex items-center gap-1 px-2 py-1 rounded-2xl border border-white/10 bg-bg-panel/60">
+					<span class="px-3 py-1.5 text-sm text-white/70 mono">Eğitim { itoa2(p.Day.DayNo) }</span>
+					<span class="w-px h-4 bg-white/10 mx-1"></span>
+					for i, t := range LearnTabs {
+						if i > 0 {
+							<span class="text-white/20 text-xs select-none">›</span>
+						}
+						@learnTab(p.Day.DayNo, t, p.ActiveTab == t.Key, p.Unlocked[t.Key], p.Completed[t.Key])
+					}
+				</nav>
+				<div class="flex items-center gap-2">
+					<button type="button" onclick="window.DiamondsPlayer && DiamondsPlayer.toggleShortcuts()"
+						class="text-sm px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-brand hover:border-brand/40 transition mono"
+						title="Klavye kısayolları (?)">?</button>
+					<a href="/" class="text-sm px-4 py-2 rounded-xl border border-brand/40 text-brand hover:bg-brand/10 transition">Kapat</a>
+				</div>
+			</header>
+
+			<main class="flex-1 px-6 py-10 max-w-6xl mx-auto w-full">
+				if !p.Unlocked[p.ActiveTab] {
+					@lockedBlock(p)
+				} else {
+					switch p.ActiveTab {
+					case "l1":
+						@videoBlock("l1", p.Day.Video1URL)
+					case "l2":
+						@videoBlock("l2", p.Day.Video2URL)
+					case "l3":
+						@videoBlock("l3", p.Day.Video3URL)
+					case "file":
+						@fileBlock(p.Day, p.Completed["file"])
+					case "quiz":
+						@quizBlock(p)
+					}
+				}
+			</main>
+
+			<footer class="px-6 py-4 flex justify-end text-[11px] text-white/40">
+				<div class="text-right">
+					<div>© 2026, Diamonds Academy</div>
+					<div>info@diamondsacademy.com</div>
+				</div>
+			</footer>
+		</div>
+	}
+}
+
+templ learnTab(dayNo int, t LearnTab, active, unlocked, completed bool) {
+	if !unlocked {
+		<span class="px-3 py-1.5 rounded-xl text-sm text-white/30 mono cursor-not-allowed inline-flex items-center gap-1" title="Önceki adımı tamamla">
+			<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
+			{ t.Label }
+		</span>
+	} else if active {
+		<a href={ templ.SafeURL("/learn/" + itoa(dayNo) + "?tab=" + t.Key) }
+			class="px-3 py-1.5 rounded-xl bg-brand text-bg text-sm font-bold mono">{ t.Label }</a>
+	} else {
+		<a href={ templ.SafeURL("/learn/" + itoa(dayNo) + "?tab=" + t.Key) }
+			class={ "px-3 py-1.5 rounded-xl text-sm mono transition inline-flex items-center gap-1 " + tabClass(completed) }>
+			if completed {
+				<svg class="w-3 h-3 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+			}
+			{ t.Label }
+		</a>
+	}
+}
+
+templ lockedBlock(p LearnProps) {
+	<div class="max-w-2xl mx-auto card-glow rounded-3xl p-12 border border-white/5 text-center">
+		<div class="w-16 h-16 mx-auto mb-6 rounded-full border border-white/10 flex items-center justify-center">
+			<svg class="w-7 h-7 text-white/40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
+		</div>
+		<h2 class="text-2xl font-bold text-brand mb-3">Bu bölüm kilitli</h2>
+		<p class="text-white/70 mb-6">Önceki dersi izleyip tamamladığında açılacak.</p>
+		<a href={ templ.SafeURL("/learn/" + itoa(p.Day.DayNo) + "?tab=" + firstUnlocked(p.Unlocked)) }
+			class="btn-primary inline-block px-6 py-3 rounded-xl font-bold">Kaldığın Yerden Devam Et</a>
+	</div>
+}
+
+templ videoBlock(slot, url string) {
+	if url == "" {
+		<div class="aspect-video w-full rounded-2xl border border-white/10 bg-black flex items-center justify-center">
+			<div class="text-white/40 text-sm mono">Video URL eklenmemiş</div>
+		</div>
+	} else {
+		<div
+			data-diamonds-player
+			data-slot={ slot }
+			data-src={ url }
+			data-block-download="true"
+			class="w-full"
+		></div>
+	}
+}
+
+templ fileBlock(d days.Day, completed bool) {
+	<div class="card-glow rounded-3xl p-12 border border-white/5" data-file-slot="file">
+		<h2 class="text-xl font-bold text-brand mb-6">Özel Dosya</h2>
+		if d.FilePath == "" {
+			<div class="text-white/40 text-sm mono">Bu eğitime özel dosya yüklenmemiş.</div>
+			<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone()"
+				class="mt-6 btn-primary inline-block px-6 py-3 rounded-xl font-bold">Devam Et</button>
+		} else {
+			<div class="aspect-[4/3] w-full rounded-xl overflow-hidden border border-white/10 bg-black mb-6">
+				<iframe src={ d.FilePath } class="w-full h-full" title="Özel Dosya"></iframe>
+			</div>
+			<div class="flex items-center gap-3">
+				<a href={ templ.SafeURL(d.FilePath) } target="_blank" rel="noopener" download
+					class="px-5 py-3 rounded-xl border border-brand/40 text-brand font-semibold hover:bg-brand/10 transition">PDF'i İndir</a>
+				<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone()"
+					class="btn-primary inline-block px-6 py-3 rounded-xl font-bold">Okudum, Devam Et</button>
+			</div>
+		}
+	</div>
+}
+
+templ quizBlock(p LearnProps) {
+	if len(p.Questions) == 0 {
+		<div class="card-glow rounded-3xl p-12 border border-white/5">
+			<h2 class="text-xl font-bold text-brand mb-4">Quiz</h2>
+			if p.Day.QuizText != "" {
+				<pre class="whitespace-pre-wrap text-white/85 text-sm font-sans leading-relaxed mb-6">{ p.Day.QuizText }</pre>
+			}
+			<div class="text-white/40 text-sm mono mb-6">Henüz soru eklenmemiş.</div>
+			<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone('quiz')"
+				class="btn-primary px-6 py-3 rounded-xl font-bold">Tamamladım</button>
+		</div>
+	} else {
+		<form id="diamonds-quiz" class="space-y-8" data-day-no={ itoa(p.Day.DayNo) }>
+			if p.Day.QuizText != "" {
+				<div class="text-white/70 text-sm border-l-2 border-brand/50 pl-4">{ p.Day.QuizText }</div>
+			}
+			for i, q := range p.Questions {
+				@quizQuestion(i, q)
+			}
+			<div class="flex items-center gap-4 pt-2">
+				<button type="submit" class="btn-primary px-8 py-3 rounded-xl font-bold">Cevapları Gönder</button>
+				<div id="diamonds-quiz-feedback" class="text-sm mono text-white/60"></div>
+			</div>
+		</form>
+	}
+}
+
+templ quizQuestion(idx int, q quiz.Question) {
+	<div class="card-glow rounded-2xl p-6 border border-white/5" data-question-index={ itoa(idx) } data-correct={ itoa(q.Correct) }>
+		<div class="flex items-start justify-between mb-4 gap-4">
+			<h3 class="text-brand font-bold text-base">{ itoa(idx+1) }. { q.Q }</h3>
+			<span class="diamonds-q-status mono text-xs text-white/40"></span>
+		</div>
+		<div class="space-y-2">
+			for j, opt := range q.Options {
+				<label class="diamonds-q-opt flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-black/40 hover:border-brand/40 cursor-pointer transition">
+					<input type="radio" name={ "q" + itoa(idx) } value={ itoa(j) } class="accent-brand"/>
+					<span class="w-7 h-7 rounded-lg border border-white/15 flex items-center justify-center text-xs font-bold text-brand mono">{ letter(j) }</span>
+					<span class="text-white/90 text-sm">{ opt }</span>
+				</label>
+			}
+		</div>
+	</div>
+}
+
+func tabClass(completed bool) string {
+	if completed {
+		return "text-brand hover:bg-white/5 border border-brand/30"
+	}
+	return "text-white/80 hover:text-brand hover:bg-white/5"
+}
+
+func firstUnlocked(u map[string]bool) string {
+	order := []string{"l1", "l2", "l3", "file", "quiz"}
+	for _, k := range order {
+		if u[k] {
+			return k
+		}
+	}
+	return "l1"
+}
+
+func letter(i int) string {
+	if i < 0 || i > 25 {
+		return "?"
+	}
+	return string(rune('A' + i))
+}

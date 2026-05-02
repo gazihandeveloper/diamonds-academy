@@ -1,0 +1,83 @@
+package pages
+
+import (
+	"github.com/diamondsacademy/diamonds/internal/auth"
+	"github.com/diamondsacademy/diamonds/internal/views/layouts"
+)
+
+type AdminProps struct {
+	Users []auth.User
+}
+
+templ Admin(p AdminProps) {
+	@layouts.AdminBase("Genel Bakış", "overview") {
+		<!-- Stat kartları -->
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+		@statCard("KULLANICILAR", itoa2(len(p.Users)), "toplam")
+		@statCard("AKTİF EĞİTİM",    "03",                "21 eğitim programı")
+		@statCard("OTURUM",       "—",                 "canlı")
+	</div>
+
+		<!-- Kullanıcı tablosu -->
+		<section class="card rounded-lg overflow-hidden">
+			<div class="flex items-center justify-between px-5 py-3 border-b border-line">
+				<div>
+					<h2 class="text-sm font-semibold text-white">Kullanıcılar</h2>
+					<p class="text-[11px] text-muted mono">SELECT * FROM users</p>
+				</div>
+				<button class="mono text-[11px] px-3 py-1.5 rounded bg-accent text-ink-900 font-semibold hover:bg-accent-soft hover:text-white transition">
+					+ YENİ KULLANICI
+				</button>
+			</div>
+			<table class="w-full text-left text-sm">
+				<thead class="text-[11px] uppercase tracking-wider text-muted bg-ink-700/40">
+					<tr>
+				<th class="px-5 py-2.5 mono">ID</th>
+				<th class="px-5 py-2.5">E-posta</th>
+				<th class="px-5 py-2.5">İsim</th>
+				<th class="px-5 py-2.5">Telefon</th>
+				<th class="px-5 py-2.5">Rol</th>
+				<th class="px-5 py-2.5 mono">Kayıt</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(p.Users) == 0 {
+						<tr>
+							<td colspan="6" class="px-5 py-6 text-center text-muted text-xs">
+								Henüz kayıtlı kullanıcı yok.
+							</td>
+						</tr>
+					}
+					for _, u := range p.Users {
+						<tr class="border-t border-line hover:bg-ink-700/40 transition">
+							<td class="px-5 py-3 mono text-muted">{ itoa2(int(u.ID)) }</td>
+							<td class="px-5 py-3 text-white">{ u.Email }</td>
+			<td class="px-5 py-3 text-white/90">{ u.Name }</td>
+			<td class="px-5 py-3 mono text-xs text-white/70">{ u.Phone }</td>
+			<td class="px-5 py-3">
+								@roleBadge(string(u.Role))
+							</td>
+							<td class="px-5 py-3 mono text-[11px] text-muted">{ u.CreatedAt.Format("2006-01-02 15:04") }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</section>
+	}
+}
+
+templ statCard(label, value, hint string) {
+	<div class="card rounded-lg p-5">
+		<div class="mono text-[10px] tracking-[0.25em] text-muted">{ label }</div>
+		<div class="text-3xl font-semibold text-white mt-2">{ value }</div>
+		<div class="text-[11px] text-muted mt-1">{ hint }</div>
+	</div>
+}
+
+templ roleBadge(role string) {
+	if role == "admin" {
+		<span class="mono text-[10px] tracking-wider px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/30">ADMIN</span>
+	} else {
+		<span class="mono text-[10px] tracking-wider px-2 py-0.5 rounded chip text-white/70">USER</span>
+	}
+}

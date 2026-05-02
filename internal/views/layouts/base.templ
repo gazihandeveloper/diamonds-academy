@@ -1,0 +1,113 @@
+package layouts
+
+templ Base(title string) {
+	<!DOCTYPE html>
+	<html lang="tr">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
+			<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
+			<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js" defer></script>
+			<script src="/static/js/diamonds-player.js" defer></script>
+			<script src="/static/js/diamonds-flow.js" defer></script>
+			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+			<script>
+				tailwind.config = {
+					theme: {
+						extend: {
+							colors: {
+								brand: { DEFAULT: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
+								bg: { DEFAULT: '#0a0a0a', panel: '#111111', card: '#161616' },
+							},
+							fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+						},
+					},
+				}
+			</script>
+			<style>
+				body { font-family: 'Inter', sans-serif; background: #0a0a0a; }
+				.day-btn { transition: all 0.2s ease; }
+				.day-btn:hover { border-color: #a855f7; color: #c084fc; }
+				.day-btn.active { background: #a855f7; color: #0a0a0a; border-color: #a855f7; }
+				.day-btn.completed { border-color: #a855f7; color: #a855f7; }
+				.progress-bar { background: linear-gradient(90deg,#a855f7 0%,#c084fc 100%); box-shadow: 0 0 12px rgba(168,85,247,.6); }
+				.card-glow { background: radial-gradient(ellipse at bottom, rgba(168,85,247,.15) 0%, transparent 70%), #161616; }
+				.btn-primary { background:#a855f7; color:#0a0a0a; transition: all .2s ease; }
+				.btn-primary:hover { background:#c084fc; box-shadow:0 0 20px rgba(168,85,247,.5); }
+				.logo-text { color:#a855f7; font-weight:800; line-height:.9; }
+				.diamond-glow { filter: drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 0 28px rgba(168,85,247,.25)); animation: diamondPulse 3.5s ease-in-out infinite; }
+				@keyframes diamondPulse {
+					0%,100% { filter: drop-shadow(0 0 12px rgba(168,85,247,.45)) drop-shadow(0 0 24px rgba(168,85,247,.2)); }
+					50%     { filter: drop-shadow(0 0 20px rgba(192,132,252,.75)) drop-shadow(0 0 40px rgba(168,85,247,.4)); }
+				}
+				:root {
+					--plyr-color-main: #a855f7;
+					--plyr-video-control-color: #ffffff;
+					--plyr-video-control-color-hover: #0a0a0a;
+					--plyr-video-control-background-hover: #a855f7;
+					--plyr-menu-background: rgba(17,17,17,.95);
+					--plyr-menu-color: #ffffff;
+					--plyr-tooltip-background: #a855f7;
+					--plyr-tooltip-color: #0a0a0a;
+					--plyr-range-fill-background: #a855f7;
+					--plyr-video-progress-buffered-background: rgba(168,85,247,.35);
+					--plyr-font-family: 'Inter', system-ui, sans-serif;
+				}
+				.plyr { border-radius: 1rem; overflow: hidden; box-shadow: 0 0 40px rgba(168,85,247,.15); }
+			</style>
+		</head>
+		<body class="text-white min-h-screen">
+			{ children... }
+		</body>
+	</html>
+}
+
+templ DiamondLogo() {
+	<svg class="w-36 h-28 diamond-glow" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<defs>
+			<linearGradient id="diamondTop" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#f5d0fe"/>
+				<stop offset="100%" stop-color="#a855f7"/>
+			</linearGradient>
+			<linearGradient id="diamondBottom" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#c084fc"/>
+				<stop offset="100%" stop-color="#7e22ce"/>
+			</linearGradient>
+		</defs>
+		<polygon points="6,28 26,6 74,6 94,28" fill="url(#diamondTop)"/>
+		<polygon points="6,28 26,6 50,28" fill="#e9d5ff" opacity="0.85"/>
+		<polygon points="74,6 94,28 50,28" fill="#a855f7" opacity="0.9"/>
+		<polygon points="26,6 50,28 74,6" fill="#f5d0fe"/>
+		<polygon points="6,28 94,28 50,76" fill="url(#diamondBottom)"/>
+		<polygon points="6,28 50,28 50,76" fill="#9333ea" opacity="0.85"/>
+		<polygon points="50,28 94,28 50,76" fill="#7e22ce"/>
+		<line x1="26" y1="6" x2="50" y2="76" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+		<line x1="74" y1="6" x2="50" y2="76" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+		<line x1="6" y1="28" x2="94" y2="28" stroke="#fff" stroke-opacity="0.4" stroke-width="0.7"/>
+	</svg>
+}
+
+templ DiamondLogoSm() {
+	<svg class="w-10 h-8 diamond-glow" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<defs>
+			<linearGradient id="diamondTopSm" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#f5d0fe"/>
+				<stop offset="100%" stop-color="#a855f7"/>
+			</linearGradient>
+			<linearGradient id="diamondBottomSm" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#c084fc"/>
+				<stop offset="100%" stop-color="#7e22ce"/>
+			</linearGradient>
+		</defs>
+		<polygon points="6,28 26,6 74,6 94,28" fill="url(#diamondTopSm)"/>
+		<polygon points="6,28 26,6 50,28" fill="#e9d5ff" opacity="0.85"/>
+		<polygon points="74,6 94,28 50,28" fill="#a855f7" opacity="0.9"/>
+		<polygon points="26,6 50,28 74,6" fill="#f5d0fe"/>
+		<polygon points="6,28 94,28 50,76" fill="url(#diamondBottomSm)"/>
+		<polygon points="6,28 50,28 50,76" fill="#9333ea" opacity="0.85"/>
+		<polygon points="50,28 94,28 50,76" fill="#7e22ce"/>
+	</svg>
+}

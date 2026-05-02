@@ -1,0 +1,107 @@
+package layouts
+
+// AdminBase is a separate layout for the admin console.
+// Tasarım dili dashboard'dan farklı: koyu slate, dar rail nav, üst bar, mono detaylar.
+templ AdminBase(title, active string) {
+	<!DOCTYPE html>
+	<html lang="tr">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
+			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+			<script>
+				tailwind.config = {
+					theme: {
+						extend: {
+							colors: {
+								ink:    { 900:'#05060a', 800:'#0b0d14', 700:'#11141d', 600:'#181c28', 500:'#222837' },
+								line:   '#222837',
+								muted:  '#8a93a6',
+								accent: { DEFAULT:'#22d3ee', soft:'#0e7490' },
+							},
+							fontFamily: {
+								sans: ['Inter','system-ui','sans-serif'],
+								mono: ['JetBrains Mono','ui-monospace','monospace'],
+							},
+						},
+					},
+				}
+			</script>
+			<style>
+				body { font-family: 'Inter', sans-serif; background: #05060a; color: #e6e8ee; }
+				.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+				.grid-bg {
+					background-image:
+						linear-gradient(to right, rgba(255,255,255,.03) 1px, transparent 1px),
+						linear-gradient(to bottom, rgba(255,255,255,.03) 1px, transparent 1px);
+					background-size: 32px 32px;
+				}
+				.nav-item { transition: all .15s ease; }
+				.nav-item:hover { background:#11141d; color:#fff; }
+				.nav-item.active { background:#11141d; color:#22d3ee; border-left:2px solid #22d3ee; }
+				.card { background:#0b0d14; border:1px solid #181c28; }
+				.chip { background:#11141d; border:1px solid #222837; }
+			</style>
+			<script src="/static/js/quiz-builder.js" defer></script>
+		</head>
+		<body class="min-h-screen grid-bg">
+			<div class="flex min-h-screen">
+				@adminRail(active)
+				<div class="flex-1 ml-56">
+					@adminTopbar(title)
+					<main class="p-8">
+						{ children... }
+					</main>
+				</div>
+			</div>
+		</body>
+	</html>
+}
+
+templ adminRail(active string) {
+	<aside class="w-56 fixed h-screen bg-ink-800 border-r border-line flex flex-col">
+		<div class="px-5 py-5 border-b border-line">
+			<div class="flex items-center gap-2">
+				<div class="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_#22d3ee]"></div>
+				<div class="mono text-[11px] tracking-[0.25em] text-white/80">DIAMONDS</div>
+			</div>
+			<div class="mono text-[10px] tracking-[0.4em] text-muted mt-1 ml-4">CONSOLE</div>
+		</div>
+		<nav class="flex-1 py-4 text-sm">
+			@railLink("overview", active, "/admin", "Genel Bakış")
+			@railLink("days",     active, "/admin/days",    "Eğitimler")
+		</nav>
+		<div class="px-5 py-4 border-t border-line text-[11px] text-muted">
+			<div class="mono">v0.1.0 · dev</div>
+			<a href="/" class="block mt-2 text-white/70 hover:text-accent transition">← Siteye dön</a>
+		</div>
+	</aside>
+}
+
+templ railLink(key, active, href, label string) {
+	if key == active {
+		<a href={ templ.SafeURL(href) } class="nav-item active block px-5 py-2.5">{ label }</a>
+	} else {
+		<a href={ templ.SafeURL(href) } class="nav-item block px-5 py-2.5 text-white/70 border-l-2 border-transparent">{ label }</a>
+	}
+}
+
+templ adminTopbar(title string) {
+	<header class="h-14 sticky top-0 z-10 bg-ink-900/80 backdrop-blur border-b border-line flex items-center justify-between px-8">
+		<div class="flex items-center gap-3">
+			<span class="mono text-[11px] text-muted">/</span>
+			<h1 class="text-sm font-semibold text-white">{ title }</h1>
+		</div>
+		<div class="flex items-center gap-3">
+			<span class="chip mono text-[10px] px-2 py-1 rounded text-muted">env: dev</span>
+			<form method="POST" action="/logout">
+				<button class="mono text-[11px] px-3 py-1.5 rounded border border-line text-white/80 hover:text-accent hover:border-accent transition">
+					ÇIKIŞ
+				</button>
+			</form>
+		</div>
+	</header>
+}

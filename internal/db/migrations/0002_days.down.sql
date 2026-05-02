@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_days_day_no;
+DROP TABLE IF EXISTS days;

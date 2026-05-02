@@ -1,0 +1,44 @@
+package components
+
+import "github.com/diamondsacademy/diamonds/internal/views/layouts"
+
+type SidebarProps struct {
+	UserName    string
+	IsLoggedIn  bool
+	IsAdmin     bool
+}
+
+templ Sidebar(p SidebarProps) {
+	<aside class="w-64 bg-bg-panel border-r border-white/5 flex flex-col justify-between p-6 fixed h-screen">
+	<div class="flex-1 flex flex-col items-center justify-center gap-5">
+		<a href="/" class="hover:opacity-80 transition">
+			@layouts.DiamondLogo()
+		</a>
+		<a href="/" class="text-center hover:opacity-80 transition">
+			<div class="logo-text text-2xl tracking-[0.25em]">DIAMONDS</div>
+			<div class="text-[11px] tracking-[0.5em] text-white/60 mt-1">ACADEMY</div>
+		</a>
+	</div>
+		<div class="space-y-3">
+			if p.IsAdmin {
+				<a href="/admin" class="block w-full py-3 rounded-full border border-brand text-brand text-center hover:bg-brand/10 transition">
+					Yönetim
+				</a>
+			}
+			if p.IsLoggedIn {
+				<a href="/profile" class="block w-full py-3 rounded-full border border-white/20 text-white text-center hover:border-brand hover:text-brand-light transition">
+					Profil
+				</a>
+				<form method="POST" action="/logout">
+					<button type="submit" class="w-full py-3 rounded-full btn-primary font-semibold">
+						Çıkış Yap
+					</button>
+				</form>
+			} else {
+				<a href="/login" class="block w-full py-3 rounded-full btn-primary font-semibold text-center">
+					Giriş Yap
+				</a>
+			}
+		</div>
+	</aside>
+}

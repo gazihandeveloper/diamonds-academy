@@ -1,0 +1,72 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/diamondsacademy/diamonds/internal/progress"
+	"github.com/diamondsacademy/diamonds/internal/views/layouts"
+)
+
+type AdminStatsProps struct {
+	Stats []progress.UserStat
+}
+
+templ AdminStats(p AdminStatsProps) {
+	@layouts.AdminBase("İzleme İstatistikleri", "stats") {
+		<section class="card rounded-lg overflow-hidden">
+			<div class="px-5 py-3 border-b border-line">
+				<h2 class="text-sm font-semibold text-white">Kullanıcı İzleme Verileri</h2>
+				<p class="text-[11px] text-muted mono">SELECT * FROM watch_progress GROUP BY user</p>
+			</div>
+			<table class="w-full text-left text-sm">
+				<thead class="text-[11px] uppercase tracking-wider text-muted bg-ink-700/40">
+					<tr>
+						<th class="px-5 py-2.5 mono">ID</th>
+						<th class="px-5 py-2.5">E-posta</th>
+						<th class="px-5 py-2.5">İsim</th>
+						<th class="px-5 py-2.5 mono text-right">Toplam Süre</th>
+						<th class="px-5 py-2.5 mono text-right">Tamamlanan Slot</th>
+						<th class="px-5 py-2.5 mono text-right">Tamamlanan Eğitim</th>
+						<th class="px-5 py-2.5 mono">Son Aktivite</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(p.Stats) == 0 {
+						<tr><td colspan="7" class="px-5 py-6 text-center text-muted text-xs">Henüz veri yok.</td></tr>
+					}
+					for _, s := range p.Stats {
+						<tr class="border-t border-line hover:bg-ink-700/40 transition">
+							<td class="px-5 py-3 mono text-muted">{ itoa2(int(s.UserID)) }</td>
+							<td class="px-5 py-3 text-white">{ s.Email }</td>
+							<td class="px-5 py-3 text-white/90">{ s.Name }</td>
+							<td class="px-5 py-3 mono text-right text-white">{ fmtDur(s.TotalSeconds) }</td>
+							<td class="px-5 py-3 mono text-right text-white/90">{ itoa2(s.SlotsCompleted) }</td>
+							<td class="px-5 py-3 mono text-right text-accent">{ itoa2(s.DaysCompleted) }</td>
+							<td class="px-5 py-3 mono text-[11px] text-muted">
+								if s.LastSeen.Valid {
+									{ s.LastSeen.Time.Format("2006-01-02 15:04") }
+								} else {
+									—
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</section>
+	}
+}
+
+func fmtDur(sec float64) string {
+	s := int(sec)
+	h := s / 3600
+	m := (s % 3600) / 60
+	ss := s % 60
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm %02ds", h, m, ss)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %02ds", m, ss)
+	}
+	return fmt.Sprintf("%ds", ss)
+}

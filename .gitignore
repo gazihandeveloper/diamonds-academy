@@ -1,0 +1,26 @@
+# Binaries
+/bin/
+/tmp/
+*.exe
+*.test
+*.out
+
+# Database
+/data/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Env
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# templ generated
+*_templ.go
+*_templ.txt
