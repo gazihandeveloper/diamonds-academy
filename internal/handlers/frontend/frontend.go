@@ -60,7 +60,7 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 	total := len(published)
 	if total == 0 {
-		render(w, r, pages.DashboardEmpty(h.sidebarFromSession(r)))
+		render(w, r, pages.DashboardEmpty(h.sidebarFromSession(r), ""))
 		return
 	}
 
@@ -141,6 +141,7 @@ func (h *Handler) Learn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	completed, _ := h.Progress.CompletedSlots(r.Context(), uid, dayNo)
+
 	// Tüm slotlar her zaman açık — sıralı kilit yok.
 	questions := quiz.Parse(d.QuizJSON)
 

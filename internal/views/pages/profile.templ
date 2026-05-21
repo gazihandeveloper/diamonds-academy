@@ -4,63 +4,65 @@ import (
 	"strings"
 
 	"github.com/diamondsacademy/diamonds/internal/auth"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/views/components"
 	"github.com/diamondsacademy/diamonds/internal/views/layouts"
 )
 
 type ProfileProps struct {
-	Sidebar       components.SidebarProps
-	User          auth.User
-	DaysCompleted int
+	Sidebar        components.SidebarProps
+	User           auth.User
+	DaysCompleted  int
 	SlotsCompleted int
+	Theme          string
 }
 
 templ Profile(p ProfileProps) {
-	@layouts.Base("Profil — Diamonds Academy") {
+	@layouts.Base(i18n.TC(ctx, "profile.page_title"), p.Theme) {
 		<div class="flex min-h-screen">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 ml-64 p-8">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0">
 				<div class="max-w-2xl mx-auto">
-					<h1 class="text-3xl font-bold text-brand mb-8">Profil</h1>
+					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-6 md:mb-8">{ i18n.TC(ctx, "profile.title") }</h1>
 
-					<div class="card-glow rounded-3xl p-10 border border-white/5 space-y-8">
-						<div class="flex items-center gap-6 pb-8 border-b border-white/5">
-							<div class="w-20 h-20 rounded-full bg-brand/20 border-2 border-brand/50 flex items-center justify-center">
-								<span class="text-3xl font-bold text-brand">
+					<div class="card-glow rounded-2xl md:rounded-3xl p-6 md:p-10 border border-white/5 space-y-6 md:space-y-8">
+						<div class="flex items-center gap-4 md:gap-6 pb-6 md:pb-8 border-b border-white/5">
+							<div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-brand/20 border-2 border-brand/50 flex items-center justify-center">
+								<span class="text-2xl md:text-3xl font-bold text-brand">
 									{ initials(p.User.Name) }
 								</span>
 							</div>
 							<div>
-								<h2 class="text-2xl font-bold text-white">{ p.User.Name }</h2>
+								<h2 class="text-xl md:text-2xl font-bold text-white">{ p.User.Name }</h2>
 								<p class="text-brand/80 text-sm">
 									if p.User.Role == auth.RoleAdmin {
-										Yönetici
+										{ i18n.TC(ctx, "profile.admin") }
 									} else {
-										Öğrenci
+										{ i18n.TC(ctx, "profile.student") }
 									}
 								</p>
 							</div>
 						</div>
 
 						<div class="grid grid-cols-1 gap-4">
-							@infoRow("Ad Soyad", p.User.Name)
-							@infoRow("E-posta", p.User.Email)
+							@infoRow(i18n.TC(ctx, "profile.name"), p.User.Name)
+							@infoRow(i18n.TC(ctx, "profile.email"), p.User.Email)
 							if p.User.Phone != "" {
-								@infoRow("Telefon", p.User.Phone)
+								@infoRow(i18n.TC(ctx, "profile.phone"), p.User.Phone)
 							}
-							@infoRow("Kayıt Tarihi", p.User.CreatedAt.Format("02 Ocak 2006"))
+							@infoRow(i18n.TC(ctx, "profile.registered"), p.User.CreatedAt.Format("02.01.2006"))
 						</div>
 
-						<div class="pt-8 border-t border-white/5">
-							<h3 class="text-sm font-semibold text-white/60 mb-4">İlerleme</h3>
-							<div class="flex gap-8">
+						<div class="pt-6 md:pt-8 border-t border-white/5">
+							<h3 class="text-sm font-semibold text-white/60 mb-4">{ i18n.TC(ctx, "profile.progress") }</h3>
+							<div class="flex gap-6 md:gap-8">
 								<div class="text-center">
-									<div class="text-3xl font-bold text-brand">{ itoa2(p.DaysCompleted) }</div>
-									<div class="text-xs text-white/40 mt-1">Tamamlanan Eğitim</div>
+									<div class="text-2xl md:text-3xl font-bold text-brand">{ itoa2(p.DaysCompleted) }</div>
+									<div class="text-xs text-white/40 mt-1">{ i18n.TC(ctx, "profile.days_completed") }</div>
 								</div>
 								<div class="text-center">
-									<div class="text-3xl font-bold text-brand">{ itoa2(p.SlotsCompleted) }</div>
-									<div class="text-xs text-white/40 mt-1">Tamamlanan Ders</div>
+									<div class="text-2xl md:text-3xl font-bold text-brand">{ itoa2(p.SlotsCompleted) }</div>
+									<div class="text-xs text-white/40 mt-1">{ i18n.TC(ctx, "profile.slots_completed") }</div>
 								</div>
 							</div>
 						</div>
