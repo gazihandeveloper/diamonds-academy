@@ -73,6 +73,13 @@ templ adminRail(active string) {
 		<nav class="flex-1 py-4 text-sm">
 			@railLink("overview", active, "/admin", "Genel Bakış")
 			@railLink("days",     active, "/admin/days",    "Eğitimler")
+			<div class="px-5 pt-5 pb-1 text-[10px] tracking-wider text-muted uppercase">Diller</div>
+			<a href="/en/admin" class="nav-item block px-5 py-2 text-white/70 border-l-2 border-transparent hover:text-accent hover:border-accent transition">
+				<span class="mr-2">🇬🇧</span> English
+			</a>
+			<a href="/bg/admin" class="nav-item block px-5 py-2 text-white/70 border-l-2 border-transparent hover:text-accent hover:border-accent transition">
+				<span class="mr-2">🇧🇬</span> Български
+			</a>
 		</nav>
 		<div class="px-5 py-4 border-t border-line text-[11px] text-muted">
 			<div class="mono">v0.1.0 · dev</div>

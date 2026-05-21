@@ -2,6 +2,7 @@ package pages
 
 import (
 	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/quiz"
 	"github.com/diamondsacademy/diamonds/internal/views/layouts"
 )
@@ -20,26 +21,69 @@ var LearnTabs = []LearnTab{
 }
 
 type LearnProps struct {
-	Day       days.Day
-	ActiveTab string
-	UserEmail string
-	// Completed: hangi slotlar bitti
-	Completed map[string]bool
-	// Unlocked: hangi slotlar açık (sırayla açılır)
-	Unlocked map[string]bool
-	// Questions: quiz sorusu listesi (parse edilmiş)
-	Questions []quiz.Question
+	Day        days.Day
+	ActiveTab  string
+	UserEmail  string
+	Completed  map[string]bool
+	Unlocked   map[string]bool
+	Questions  []quiz.Question
+	Theme      string
+}
+
+var lessonKeys = map[string]string{
+	"l1":   "learn.lesson_01",
+	"l2":   "learn.lesson_02",
+	"l3":   "learn.lesson_03",
+	"file": "learn.file",
+	"quiz": "learn.quiz",
+}
+
+func tabLabel(key string) string {
+	if k, ok := lessonKeys[key]; ok {
+		return k
+	}
+	return key
+}
+
+func stepCount(p LearnProps) int {
+	if p.Day.FilePath != "" {
+		return 5
+	}
+	return 4
+}
+
+func stepIndex(p LearnProps) int {
+	order := []string{"l1", "l2", "l3", "quiz"}
+	if p.Day.FilePath != "" {
+		order = []string{"l1", "l2", "l3", "file", "quiz"}
+	}
+	for i, k := range order {
+		if k == p.ActiveTab {
+			return i + 1
+		}
+	}
+	return 1
+}
+
+func completedSteps(completed map[string]bool) int {
+	n := 0
+	for _, s := range []string{"l1", "l2", "l3", "quiz"} {
+		if completed[s] {
+			n++
+		}
+	}
+	return n
 }
 
 templ Learn(p LearnProps) {
-	@layouts.Base("Eğitim " + itoa2(p.Day.DayNo) + " — " + p.Day.Title) {
+	@layouts.Base(i18n.TC(ctx, "learn.page_title", itoa2(p.Day.DayNo), p.Day.Title), p.Theme) {
 		<div
-			class="min-h-screen flex flex-col bg-bg"
+			class="min-h-screen bg-bg"
 			data-day-no={ itoa(p.Day.DayNo) }
 			data-active-tab={ p.ActiveTab }
 			data-user-email={ p.UserEmail }
 		>
-			<header class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+			<header class="flex items-center justify-between px-6 py-3 border-b border-white/5">
 				<a href="/" class="flex items-center gap-3">
 					@layouts.DiamondLogoSm()
 					<div class="leading-tight">
@@ -47,25 +91,44 @@ templ Learn(p LearnProps) {
 						<div class="text-[10px] tracking-[0.3em] text-white/60">ACADEMY</div>
 					</div>
 				</a>
-				<nav class="flex items-center gap-1 px-2 py-1 rounded-2xl border border-white/10 bg-bg-panel/60">
-					<span class="px-3 py-1.5 text-sm text-white/70 mono">Eğitim { itoa2(p.Day.DayNo) }</span>
-					<span class="w-px h-4 bg-white/10 mx-1"></span>
-					for i, t := range LearnTabs {
-						if i > 0 {
-							<span class="text-white/20 text-xs select-none">›</span>
-						}
-						@learnTab(p.Day.DayNo, t, p.ActiveTab == t.Key, p.Unlocked[t.Key], p.Completed[t.Key])
-					}
-				</nav>
 				<div class="flex items-center gap-2">
 					<button type="button" onclick="window.DiamondsPlayer && DiamondsPlayer.toggleShortcuts()"
-						class="text-sm px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-brand hover:border-brand/40 transition mono"
-						title="Klavye kısayolları (?)">?</button>
-					<a href="/" class="text-sm px-4 py-2 rounded-xl border border-brand/40 text-brand hover:bg-brand/10 transition">Kapat</a>
+						class="text-xs px-2 py-1.5 rounded-lg border border-white/10 text-white/60 hover:text-brand transition"
+						title={ i18n.TC(ctx, "learn.shortcuts") }>?</button>
+					<a href="/" class="text-xs px-3 py-1.5 rounded-lg border border-brand/40 text-brand hover:bg-brand/10 transition">{ i18n.TC(ctx, "learn.back") }</a>
 				</div>
 			</header>
 
-			<main class="flex-1 px-6 py-10 max-w-6xl mx-auto w-full">
+			<div class="px-6 py-4 border-b border-white/5 bg-bg-panel/40">
+				<div class="flex items-center justify-between mb-3">
+					<div>
+						<span class="text-[10px] tracking-[0.3em] text-brand font-bold uppercase">{ i18n.TC(ctx, "learn.chapter") } { itoa2(p.Day.DayNo) }</span>
+						<h1 class="text-base font-semibold text-white/90 mt-0.5">{ p.Day.Title }</h1>
+					</div>
+				</div>
+
+				<div class="flex items-center justify-center gap-2 mb-3">
+					@stepCircle("l1", 1, p)
+					@stepLine(p.Completed["l1"])
+					@stepCircle("l2", 2, p)
+					@stepLine(p.Completed["l2"])
+					@stepCircle("l3", 3, p)
+					@stepLine(p.Completed["l3"])
+					@stepCircle("quiz", 4, p)
+				</div>
+
+				<div class="flex items-center gap-3 max-w-md mx-auto">
+					<div class="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+						<div class="h-full bg-brand rounded-full transition-all duration-500 ease-out"
+							style={ "width:" + progressPct(completedSteps(p.Completed), 4) }></div>
+					</div>
+					<span class="text-xs text-white/50 shrink-0">
+						{ itoa2(completedSteps(p.Completed)) }/4
+					</span>
+				</div>
+			</div>
+
+			<main class="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
 				if !p.Unlocked[p.ActiveTab] {
 					@lockedBlock(p)
 				} else {
@@ -83,34 +146,49 @@ templ Learn(p LearnProps) {
 					}
 				}
 			</main>
-
-			<footer class="px-6 py-4 flex justify-end text-[11px] text-white/40">
-				<div class="text-right">
-					<div>© 2026, Diamonds Academy</div>
-					<div>info@diamondsacademy.com</div>
-				</div>
-			</footer>
 		</div>
 	}
 }
 
-templ learnTab(dayNo int, t LearnTab, active, unlocked, completed bool) {
-	if !unlocked {
-		<span class="px-3 py-1.5 rounded-xl text-sm text-white/30 mono cursor-not-allowed inline-flex items-center gap-1" title="Önceki adımı tamamla">
-			<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
-			{ t.Label }
-		</span>
-	} else if active {
-		<a href={ templ.SafeURL("/learn/" + itoa(dayNo) + "?tab=" + t.Key) }
-			class="px-3 py-1.5 rounded-xl bg-brand text-bg text-sm font-bold mono">{ t.Label }</a>
-	} else {
-		<a href={ templ.SafeURL("/learn/" + itoa(dayNo) + "?tab=" + t.Key) }
-			class={ "px-3 py-1.5 rounded-xl text-sm mono transition inline-flex items-center gap-1 " + tabClass(completed) }>
-			if completed {
-				<svg class="w-3 h-3 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
-			}
-			{ t.Label }
+templ stepCircle(key string, num int, p LearnProps) {
+	if p.Completed[key] {
+		<a href={ templ.SafeURL("/learn/" + itoa(p.Day.DayNo) + "?tab=" + key) }
+			class="flex flex-col items-center gap-1 group shrink-0">
+			<div class="w-10 h-10 rounded-full bg-brand/20 border-2 border-brand flex items-center justify-center transition group-hover:bg-brand/30">
+				<svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/></svg>
+			</div>
+			<span class="text-[10px] text-brand font-semibold">{ i18n.TC(ctx, tabLabel(key)) }</span>
 		</a>
+	} else if p.ActiveTab == key {
+		<div class="flex flex-col items-center gap-1 shrink-0">
+			<div class="w-10 h-10 rounded-full bg-brand text-white border-2 border-brand flex items-center justify-center font-bold text-sm shadow-lg shadow-brand/30">
+				{ itoa2(num) }
+			</div>
+			<span class="text-[10px] text-white font-bold">{ i18n.TC(ctx, tabLabel(key)) }</span>
+		</div>
+	} else if p.Unlocked[key] {
+		<a href={ templ.SafeURL("/learn/" + itoa(p.Day.DayNo) + "?tab=" + key) }
+			class="flex flex-col items-center gap-1 group shrink-0">
+			<div class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-sm font-semibold text-white/60 group-hover:border-brand group-hover:text-brand transition">
+				{ itoa2(num) }
+			</div>
+			<span class="text-[10px] text-white/50 group-hover:text-white/80 transition">{ i18n.TC(ctx, tabLabel(key)) }</span>
+		</a>
+	} else {
+		<div class="flex flex-col items-center gap-1 shrink-0 cursor-not-allowed opacity-40">
+			<div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center">
+				<svg class="w-4 h-4 text-white/30" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
+			</div>
+			<span class="text-[10px] text-white/30">{ i18n.TC(ctx, tabLabel(key)) }</span>
+		</div>
+	}
+}
+
+templ stepLine(completed bool) {
+	if completed {
+		<div class="w-10 h-0.5 bg-brand rounded-full shrink-0"></div>
+	} else {
+		<div class="w-10 h-0.5 bg-white/10 rounded-full shrink-0"></div>
 	}
 }
 
@@ -119,45 +197,39 @@ templ lockedBlock(p LearnProps) {
 		<div class="w-16 h-16 mx-auto mb-6 rounded-full border border-white/10 flex items-center justify-center">
 			<svg class="w-7 h-7 text-white/40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
 		</div>
-		<h2 class="text-2xl font-bold text-brand mb-3">Bu bölüm kilitli</h2>
-		<p class="text-white/70 mb-6">Önceki dersi izleyip tamamladığında açılacak.</p>
+		<h2 class="text-2xl font-bold text-brand mb-3">{ i18n.TC(ctx, "learn.locked_title") }</h2>
+		<p class="text-white/70 mb-6">{ i18n.TC(ctx, "learn.locked_desc") }</p>
 		<a href={ templ.SafeURL("/learn/" + itoa(p.Day.DayNo) + "?tab=" + firstUnlocked(p.Unlocked)) }
-			class="btn-primary inline-block px-6 py-3 rounded-xl font-bold">Kaldığın Yerden Devam Et</a>
+			class="btn-primary inline-block px-6 py-3 rounded-xl font-bold">{ i18n.TC(ctx, "learn.resume") }</a>
 	</div>
 }
 
 templ videoBlock(slot, url string) {
 	if url == "" {
 		<div class="aspect-video w-full rounded-2xl border border-white/10 bg-black flex items-center justify-center">
-			<div class="text-white/40 text-sm mono">Video URL eklenmemiş</div>
+			<div class="text-white/40 text-base">{ i18n.TC(ctx, "learn.no_video") }</div>
 		</div>
 	} else {
-		<div
-			data-diamonds-player
-			data-slot={ slot }
-			data-src={ url }
-			data-block-download="true"
-			class="w-full"
-		></div>
+		<div data-diamonds-player data-slot={ slot } data-src={ url } data-block-download="true" class="w-full"></div>
 	}
 }
 
 templ fileBlock(d days.Day, completed bool) {
-	<div class="card-glow rounded-3xl p-12 border border-white/5" data-file-slot="file">
-		<h2 class="text-xl font-bold text-brand mb-6">Özel Dosya</h2>
+	<div class="card-glow rounded-3xl p-12 border border-white/5">
+		<h2 class="text-xl font-bold text-brand mb-6">{ i18n.TC(ctx, "learn.file") }</h2>
 		if d.FilePath == "" {
-			<div class="text-white/40 text-sm mono">Bu eğitime özel dosya yüklenmemiş.</div>
+			<div class="text-white/40 text-sm">{ i18n.TC(ctx, "learn.no_file") }</div>
 			<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone()"
-				class="mt-6 btn-primary inline-block px-6 py-3 rounded-xl font-bold">Devam Et</button>
+				class="mt-6 btn-primary inline-block px-6 py-3 rounded-xl font-bold">{ i18n.TC(ctx, "learn.continue") }</button>
 		} else {
 			<div class="aspect-[4/3] w-full rounded-xl overflow-hidden border border-white/10 bg-black mb-6">
-				<iframe src={ d.FilePath } class="w-full h-full" title="Özel Dosya"></iframe>
+				<iframe src={ d.FilePath } class="w-full h-full"></iframe>
 			</div>
 			<div class="flex items-center gap-3">
 				<a href={ templ.SafeURL(d.FilePath) } target="_blank" rel="noopener" download
-					class="px-5 py-3 rounded-xl border border-brand/40 text-brand font-semibold hover:bg-brand/10 transition">PDF'i İndir</a>
+					class="px-5 py-3 rounded-xl border border-brand/40 text-brand font-semibold hover:bg-brand/10 transition">{ i18n.TC(ctx, "learn.download_pdf") }</a>
 				<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone()"
-					class="btn-primary inline-block px-6 py-3 rounded-xl font-bold">Okudum, Devam Et</button>
+					class="btn-primary px-6 py-3 rounded-xl font-bold">{ i18n.TC(ctx, "learn.read_continue") }</button>
 			</div>
 		}
 	</div>
@@ -165,26 +237,24 @@ templ fileBlock(d days.Day, completed bool) {
 
 templ quizBlock(p LearnProps) {
 	if len(p.Questions) == 0 {
-		<div class="card-glow rounded-3xl p-12 border border-white/5">
-			<h2 class="text-xl font-bold text-brand mb-4">Quiz</h2>
-			if p.Day.QuizText != "" {
-				<pre class="whitespace-pre-wrap text-white/85 text-sm font-sans leading-relaxed mb-6">{ p.Day.QuizText }</pre>
-			}
-			<div class="text-white/40 text-sm mono mb-6">Henüz soru eklenmemiş.</div>
-			<button type="button" onclick="window.DiamondsFlow && DiamondsFlow.markFileDone('quiz')"
-				class="btn-primary px-6 py-3 rounded-xl font-bold">Tamamladım</button>
+		<div class="card-glow rounded-3xl p-12 border border-white/5 text-center">
+			<h2 class="text-xl font-bold text-brand mb-4">{ i18n.TC(ctx, "learn.quiz_title", itoa2(p.Day.DayNo)) }</h2>
+			<div class="text-white/40 text-sm mb-6">{ i18n.TC(ctx, "learn.no_questions") }</div>
+			<button type="button" onclick="window.DiamondsFlow && window.DiamondsFlow.forceCompleteQuiz()"
+				class="btn-primary px-8 py-3 rounded-xl font-bold text-lg">{ i18n.TC(ctx, "learn.complete_chapter") }</button>
 		</div>
 	} else {
-		<form id="diamonds-quiz" class="space-y-8" data-day-no={ itoa(p.Day.DayNo) }>
-			if p.Day.QuizText != "" {
-				<div class="text-white/70 text-sm border-l-2 border-brand/50 pl-4">{ p.Day.QuizText }</div>
-			}
+		<div class="mb-4 text-center">
+			<h2 class="text-xl font-bold text-brand">{ i18n.TC(ctx, "learn.quiz_title", itoa2(p.Day.DayNo)) }</h2>
+			<p class="text-sm text-white/50 mt-1">{ i18n.TC(ctx, "learn.quiz_desc") }</p>
+		</div>
+		<form id="diamonds-quiz" class="space-y-6 max-w-3xl mx-auto" data-day-no={ itoa(p.Day.DayNo) }>
 			for i, q := range p.Questions {
 				@quizQuestion(i, q)
 			}
-			<div class="flex items-center gap-4 pt-2">
-				<button type="submit" class="btn-primary px-8 py-3 rounded-xl font-bold">Cevapları Gönder</button>
-				<div id="diamonds-quiz-feedback" class="text-sm mono text-white/60"></div>
+			<div class="flex items-center gap-4 pt-4">
+				<button type="submit" class="btn-primary px-10 py-4 rounded-xl font-bold text-lg">{ i18n.TC(ctx, "learn.submit_answers") }</button>
+				<div id="diamonds-quiz-feedback" class="text-sm font-semibold text-white/60"></div>
 			</div>
 		</form>
 	}
@@ -193,14 +263,12 @@ templ quizBlock(p LearnProps) {
 templ quizQuestion(idx int, q quiz.Question) {
 	<div class="card-glow rounded-2xl p-6 border border-white/5" data-question-index={ itoa(idx) } data-correct={ itoa(q.Correct) }>
 		<div class="flex items-start justify-between mb-4 gap-4">
-			<h3 class="text-brand font-bold text-base">{ itoa(idx+1) }. { q.Q }</h3>
-			<span class="diamonds-q-status mono text-xs text-white/40"></span>
+			<h3 class="text-white font-bold text-base">{ itoa(idx+1) }. { q.Q }</h3>
 		</div>
 		<div class="space-y-2">
 			for j, opt := range q.Options {
-				<label class="diamonds-q-opt flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-black/40 hover:border-brand/40 cursor-pointer transition">
+				<label class="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-black/40 hover:border-brand/40 cursor-pointer transition">
 					<input type="radio" name={ "q" + itoa(idx) } value={ itoa(j) } class="accent-brand"/>
-					<span class="w-7 h-7 rounded-lg border border-white/15 flex items-center justify-center text-xs font-bold text-brand mono">{ letter(j) }</span>
 					<span class="text-white/90 text-sm">{ opt }</span>
 				</label>
 			}
@@ -216,18 +284,11 @@ func tabClass(completed bool) string {
 }
 
 func firstUnlocked(u map[string]bool) string {
-	order := []string{"l1", "l2", "l3", "file", "quiz"}
+	order := []string{"l1", "l2", "l3", "quiz"}
 	for _, k := range order {
 		if u[k] {
 			return k
 		}
 	}
 	return "l1"
-}
-
-func letter(i int) string {
-	if i < 0 || i > 25 {
-		return "?"
-	}
-	return string(rune('A' + i))
 }

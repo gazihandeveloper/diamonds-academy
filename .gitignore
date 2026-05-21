@@ -21,6 +21,13 @@
 .idea/
 .DS_Store
 
+# Logs
+*.log
+diamonds.log
+
 # templ generated
 *_templ.go
 *_templ.txt
+
+# Temp
+/tmp/

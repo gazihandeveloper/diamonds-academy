@@ -1,6 +1,9 @@
 package components
 
-import "github.com/diamondsacademy/diamonds/internal/views/layouts"
+import (
+	"github.com/diamondsacademy/diamonds/internal/i18n"
+	"github.com/diamondsacademy/diamonds/internal/views/layouts"
+)
 
 type SidebarProps struct {
 	UserName    string
@@ -9,36 +12,91 @@ type SidebarProps struct {
 }
 
 templ Sidebar(p SidebarProps) {
-	<aside class="w-64 bg-bg-panel border-r border-white/5 flex flex-col justify-between p-6 fixed h-screen">
-	<div class="flex-1 flex flex-col items-center justify-center gap-5">
-		<a href="/" class="hover:opacity-80 transition">
-			@layouts.DiamondLogo()
+	<!-- MOBILE TOP BAR -->
+	<header class="md:hidden fixed top-0 left-0 right-0 z-50 bg-bg-panel border-b border-white/5 flex items-center justify-between px-4 py-3">
+		<button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-white/10 transition" aria-label="Toggle menu">
+			<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path d="M4 6h16M4 12h16M4 18h16"/>
+			</svg>
+		</button>
+		<a href="/" class="flex items-center gap-2">
+			@layouts.DiamondLogoSm()
+			<div class="leading-tight">
+				<div class="text-[10px] tracking-[0.2em] text-brand font-bold">DIAMONDS</div>
+				<div class="text-[9px] tracking-[0.2em] text-white/60">ACADEMY</div>
+			</div>
 		</a>
-		<a href="/" class="text-center hover:opacity-80 transition">
-			<div class="logo-text text-2xl tracking-[0.25em]">DIAMONDS</div>
-			<div class="text-[11px] tracking-[0.5em] text-white/60 mt-1">ACADEMY</div>
-		</a>
-	</div>
+		<div class="w-9"></div>
+	</header>
+
+	<!-- OVERLAY -->
+	<div id="sidebar-overlay" class="md:hidden fixed inset-0 z-40 bg-black/60 hidden" onclick="toggleSidebar()"></div>
+
+	<!-- SIDEBAR -->
+	<aside id="sidebar" class="fixed top-0 left-0 z-50 w-64 h-screen bg-bg-panel border-r border-white/5 flex flex-col justify-between p-6 transition-transform duration-300 -translate-x-full md:translate-x-0">
+		<!-- Close button (mobile) -->
+		<button id="sidebar-close" class="md:hidden absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 transition" onclick="toggleSidebar()">
+			<svg class="w-4 h-4 text-white/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path d="M6 18L18 6M6 6l12 12"/>
+			</svg>
+		</button>
+
+		<div class="flex-1 flex flex-col items-center justify-center gap-5">
+			<a href="/" class="hover:opacity-80 transition" onclick="closeSidebar()">
+				@layouts.DiamondLogo()
+			</a>
+			<a href="/" class="text-center hover:opacity-80 transition" onclick="closeSidebar()">
+				<div class="logo-text text-2xl tracking-[0.25em]">DIAMONDS</div>
+				<div class="text-[11px] tracking-[0.5em] text-white/60 mt-1">ACADEMY</div>
+			</a>
+		</div>
 		<div class="space-y-3">
 			if p.IsAdmin {
-				<a href="/admin" class="block w-full py-3 rounded-full border border-brand text-brand text-center hover:bg-brand/10 transition">
-					Yönetim
+				<a href="/admin" class="block w-full py-3 rounded-full border border-brand text-brand text-center hover:bg-brand/10 transition" onclick="closeSidebar()">
+					{ i18n.TC(ctx, "sidebar.admin") }
 				</a>
 			}
 			if p.IsLoggedIn {
-				<a href="/profile" class="block w-full py-3 rounded-full border border-white/20 text-white text-center hover:border-brand hover:text-brand-light transition">
-					Profil
+				<a href="/profile" class="block w-full py-3 rounded-full border border-white/20 text-white text-center hover:border-brand hover:text-brand-light transition" onclick="closeSidebar()">
+					{ i18n.TC(ctx, "sidebar.profile") }
 				</a>
 				<form method="POST" action="/logout">
 					<button type="submit" class="w-full py-3 rounded-full btn-primary font-semibold">
-						Çıkış Yap
+						{ i18n.TC(ctx, "sidebar.logout") }
 					</button>
 				</form>
 			} else {
-				<a href="/login" class="block w-full py-3 rounded-full btn-primary font-semibold text-center">
-					Giriş Yap
+				<a href="/login" class="block w-full py-3 rounded-full btn-primary font-semibold text-center" onclick="closeSidebar()">
+					{ i18n.TC(ctx, "sidebar.login") }
 				</a>
 			}
 		</div>
 	</aside>
+
+	<script>
+		function toggleSidebar() {
+			var s = document.getElementById('sidebar');
+			var o = document.getElementById('sidebar-overlay');
+			if (!s) return;
+			var isOpen = !s.classList.contains('-translate-x-full');
+			s.classList.toggle('-translate-x-full');
+			if (o) o.classList.toggle('hidden');
+			document.body.classList.toggle('overflow-hidden', !isOpen);
+		}
+		function closeSidebar() {
+			var s = document.getElementById('sidebar');
+			var o = document.getElementById('sidebar-overlay');
+			if (!s) return;
+			s.classList.add('-translate-x-full');
+			if (o) o.classList.add('hidden');
+			document.body.classList.remove('overflow-hidden');
+		}
+		// Close sidebar on Escape key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') closeSidebar();
+		});
+		// Hamburger toggle
+		var btn = document.getElementById('sidebar-toggle');
+		if (btn) btn.addEventListener('click', toggleSidebar);
+	</script>
 }

@@ -2,6 +2,7 @@ package pages
 
 import (
 	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/views/components"
 	"github.com/diamondsacademy/diamonds/internal/views/layouts"
 )
@@ -16,9 +17,9 @@ type DashboardProps struct {
 	CompletedDays    map[int]bool
 	CompletedQuizzes map[int]bool
 	AllCompleted     bool
+	Theme            string
 }
 
-// dayUnlocked: eğitim 1 her zaman açık. Diğerleri için önceki eğitimin quiz'i tamamlanmış olmalı.
 func dayUnlocked(day int, completedQuizzes map[int]bool) bool {
 	if day <= 1 {
 		return true
@@ -27,13 +28,13 @@ func dayUnlocked(day int, completedQuizzes map[int]bool) bool {
 }
 
 templ Dashboard(p DashboardProps) {
-	@layouts.Base("Diamonds Academy — Eğitim " + itoa2(p.CurrentDay)) {
+	@layouts.Base(i18n.TC(ctx, "dashboard.page_title", itoa2(p.CurrentDay)), p.Theme) {
 		<div class="flex min-h-screen">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 ml-64 p-8">
-				<div class="flex items-start gap-4 mb-12">
-					<div class="flex-1 border border-white/10 rounded-2xl p-4 bg-bg-panel/50">
-						<div class="flex flex-wrap items-center gap-2">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0">
+				<div class="flex items-start gap-2 md:gap-4 mb-6 md:mb-12 flex-wrap">
+					<div class="flex-1 border border-white/10 rounded-2xl p-3 md:p-4 bg-bg-panel/50 min-w-0 max-w-full">
+						<div class="flex flex-wrap items-center gap-1 md:gap-1.5 max-w-full">
 							for i, d := range p.Days {
 								if i > 0 {
 									<span class="text-white/30 text-sm select-none">&rarr;</span>
@@ -43,27 +44,27 @@ templ Dashboard(p DashboardProps) {
 				</div>
 			</div>
 		if p.AllCompleted {
-			<a href="/certificate" class="border-2 border-brand rounded-xl p-3 bg-brand/10 hover:bg-brand/20 transition flex flex-col items-center gap-1 min-w-[80px]">
+			<a href="/certificate" class="border-2 border-brand rounded-xl p-3 bg-brand/10 hover:bg-brand/20 transition flex flex-col items-center gap-1 min-w-[80px] shrink-0">
 				<svg class="w-6 h-6 text-brand" fill="currentColor" viewBox="0 0 24 24">
 					<path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
 				</svg>
-				<span class="text-xs text-brand font-semibold">Sertifika</span>
+				<span class="text-xs text-brand font-semibold">{ i18n.TC(ctx, "dashboard.certificate") }</span>
 			</a>
 		} else {
-			<span class="border-2 border-white/10 rounded-xl p-3 bg-white/5 flex flex-col items-center gap-1 min-w-[80px] cursor-not-allowed opacity-40" title="Tüm eğitimleri tamamlayınca açılır">
+			<span class="border-2 border-white/10 rounded-xl p-3 bg-white/5 flex flex-col items-center gap-1 min-w-[80px] cursor-not-allowed opacity-40 shrink-0" title={ i18n.TC(ctx, "dashboard.locked_tooltip") }>
 				<svg class="w-6 h-6 text-white/40" fill="currentColor" viewBox="0 0 24 24">
 					<path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/>
 				</svg>
-				<span class="text-xs text-white/40">Sertifika</span>
+				<span class="text-xs text-white/40">{ i18n.TC(ctx, "dashboard.certificate") }</span>
 			</span>
 		}
 		</div>
 
-		<div class="card-glow rounded-3xl p-12 border border-white/5 max-w-5xl mx-auto">
-			<h1 class="text-4xl font-bold text-brand mb-8">
-				Eğitim { itoa2(p.CurrentDay) }: { p.DayTitle }
+		<div class="card-glow rounded-2xl md:rounded-3xl p-6 md:p-12 border border-white/5 max-w-5xl mx-auto">
+			<h1 class="text-2xl md:text-4xl font-bold text-brand mb-4 md:mb-8">
+				{ i18n.TC(ctx, "dashboard.chapter") } { itoa2(p.CurrentDay) }: { p.DayTitle }
 			</h1>
-			<ul class="space-y-3 mb-8 text-white/90 text-lg">
+			<ul class="space-y-2 md:space-y-3 mb-6 md:mb-8 text-white/90 text-base md:text-lg">
 				for _, b := range p.Bullets {
 					<li class="flex items-center gap-3">
 						<span class="w-1.5 h-1.5 bg-white rounded-full"></span>
@@ -71,43 +72,37 @@ templ Dashboard(p DashboardProps) {
 					</li>
 				}
 			</ul>
-			<p class="text-white/80 leading-relaxed mb-12 max-w-4xl">
+			<p class="text-white/80 leading-relaxed mb-12 max-w-4xl break-words">
 				{ p.Description }
 			</p>
 			<div class="flex justify-center">
 				if dayUnlocked(p.CurrentDay, p.CompletedQuizzes) {
 					<a href={ templ.SafeURL("/learn/" + itoa(p.CurrentDay)) } class="btn-primary px-10 py-4 rounded-xl font-bold text-base">
-						Eğitime Başla
+						{ i18n.TC(ctx, "dashboard.start_chapter") }
 					</a>
 				} else {
 					<button disabled class="px-10 py-4 rounded-xl font-bold text-base border border-white/10 text-white/40 cursor-not-allowed bg-white/5">
-						Eğitime Başla
+						{ i18n.TC(ctx, "dashboard.start_chapter") }
 					</button>
 				}
 			</div>
 		</div>
 
-				<footer class="mt-16 flex justify-end text-xs text-white/40 pr-8">
-					<div class="text-right">
-						<div>© 2026, Diamonds Academy</div>
-						<div>info@diamondsacademy.com</div>
-					</div>
-				</footer>
 			</main>
 		</div>
 	}
 }
 
-templ DashboardEmpty(sb components.SidebarProps) {
-	@layouts.Base("Diamonds Academy") {
+templ DashboardEmpty(sb components.SidebarProps, theme string) {
+	@layouts.Base(i18n.TC(ctx, "dashboard.page_title"), theme) {
 		<div class="flex min-h-screen">
 			@components.Sidebar(sb)
-			<main class="flex-1 ml-64 p-8 flex items-center justify-center">
-				<div class="card-glow rounded-3xl p-12 border border-white/5 max-w-xl text-center">
-					<h1 class="text-3xl font-bold text-brand mb-4">Henüz içerik yok</h1>
-		<p class="text-white/70 mb-6">Yönetim panelinden ilk eğitimi ekleyince burada görünecek.</p>
+			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0 flex items-center justify-center">
+				<div class="card-glow rounded-3xl p-6 md:p-12 border border-white/5 max-w-xl text-center">
+					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-4">{ i18n.TC(ctx, "dashboard.empty_title") }</h1>
+		<p class="text-white/70 mb-6 text-sm md:text-base">{ i18n.TC(ctx, "dashboard.empty_desc") }</p>
 		<a href="/admin/days/new" class="btn-primary px-6 py-3 rounded-xl font-bold inline-block">
-			Yönetim → Yeni Eğitim Ekle
+			{ i18n.TC(ctx, "dashboard.empty_cta") }
 		</a>
 				</div>
 			</main>
@@ -117,16 +112,16 @@ templ DashboardEmpty(sb components.SidebarProps) {
 
 templ dayButton(day, current int, completed, unlocked bool) {
 	if !unlocked {
-		<span class="day-btn locked w-10 h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/30 cursor-not-allowed bg-white/5" title="Önceki eğitimi tamamla">
-			<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+		<span class="day-btn locked w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/30 cursor-not-allowed bg-white/5" title={ i18n.TC(ctx, "dashboard.locked_tooltip") }>
+			<svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" viewBox="0 0 24 24">
 				<path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/>
 			</svg>
 		</span>
 	} else if day == current {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn active w-10 h-10 rounded-lg border flex items-center justify-center text-sm font-bold">{ itoa2(day) }</a>
+		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn active w-8 h-8 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center text-xs sm:text-sm font-bold">{ itoa2(day) }</a>
 	} else if completed {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn completed w-10 h-10 rounded-lg border border-brand/40 text-brand flex items-center justify-center text-sm font-semibold" title="Tamamlandı">{ itoa2(day) }</a>
+		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn completed w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-brand/40 text-brand flex items-center justify-center text-xs sm:text-sm font-semibold">{ itoa2(day) }</a>
 	} else {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn w-10 h-10 rounded-lg border border-white/15 flex items-center justify-center text-sm font-semibold">{ itoa2(day) }</a>
+		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/15 flex items-center justify-center text-xs sm:text-sm font-semibold">{ itoa2(day) }</a>
 	}
 }
