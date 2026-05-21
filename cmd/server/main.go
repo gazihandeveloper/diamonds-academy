@@ -13,6 +13,7 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/auth"
 	"github.com/diamondsacademy/diamonds/internal/config"
 	"github.com/diamondsacademy/diamonds/internal/db"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/logger"
 	"github.com/diamondsacademy/diamonds/internal/server"
 	"github.com/diamondsacademy/diamonds/internal/session"
@@ -43,7 +44,26 @@ func main() {
 		log.Warn("ensure admin failed", slog.String("err", err.Error()))
 	}
 
-	sm := session.New(conn, cfg.SessionLifetime)
+	if err := i18n.Load("web/static/translations"); err != nil {
+		log.Warn("i18n load", slog.String("err", err.Error()))
+	}
+
+	sessionDBPath := os.Getenv("SESSION_DB_PATH")
+	if sessionDBPath == "" {
+		sessionDBPath = cfg.DBPath
+	}
+	log.Info("session db path", slog.String("path", sessionDBPath))
+	sessionConn, err := db.Open(sessionDBPath)
+	if err != nil {
+		log.Error("session db open failed", slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+	defer sessionConn.Close()
+	if err := db.Migrate(sessionConn); err != nil {
+		log.Warn("session db migrate", slog.String("err", err.Error()))
+	}
+
+	sm := session.New(sessionConn, cfg.SessionLifetime)
 
 	r := server.NewRouter(server.Deps{
 		Logger:  log,

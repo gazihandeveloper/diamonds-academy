@@ -13,6 +13,7 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/handlers/admin"
 	"github.com/diamondsacademy/diamonds/internal/handlers/api"
 	"github.com/diamondsacademy/diamonds/internal/handlers/frontend"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	mw "github.com/diamondsacademy/diamonds/internal/middleware"
 )
 
@@ -38,6 +39,7 @@ func NewRouter(d Deps) http.Handler {
 	// Tüm web rotalarına session sar
 	web := chi.NewRouter()
 	web.Use(d.SM.LoadAndSave)
+	web.Use(i18n.Middleware(d.SM))
 
 	front := frontend.New(d.SM, d.DB, d.AuthSvc)
 	authH := frontend.NewAuth(d.SM, d.AuthSvc)
