@@ -1,10 +1,12 @@
 package layouts
 
+import "github.com/diamondsacademy/diamonds/internal/i18n"
+
 // AdminBase is a separate layout for the admin console.
 // Tasarım dili dashboard'dan farklı: koyu slate, dar rail nav, üst bar, mono detaylar.
 templ AdminBase(title, active string) {
 	<!DOCTYPE html>
-	<html lang="tr">
+	<html lang={ i18n.FromContext(ctx) }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -48,6 +50,15 @@ templ AdminBase(title, active string) {
 			<script src="/static/js/quiz-builder.js" defer></script>
 		</head>
 		<body class="min-h-screen grid-bg">
+			if i18n.FromContext(ctx) == "en" {
+				<div class="sticky top-0 z-50 bg-blue-600/90 backdrop-blur border-b border-blue-400/40 px-6 py-2.5 text-center text-sm text-white font-medium">
+					🇬🇧 <strong>İngilizce Paneli</strong> yönetiyorsunuz — <a href="/admin" class="underline hover:text-blue-200">🇹🇷 Türkçe panele geç</a>
+				</div>
+			} else if i18n.FromContext(ctx) == "bg" {
+				<div class="sticky top-0 z-50 bg-green-600/90 backdrop-blur border-b border-green-400/40 px-6 py-2.5 text-center text-sm text-white font-medium">
+					🇧🇬 <strong>Bulgarca Paneli</strong> yönetiyorsunuz — <a href="/admin" class="underline hover:text-green-200">🇹🇷 Türkçe panele geç</a>
+				</div>
+			}
 			<div class="flex min-h-screen">
 				@adminRail(active)
 				<div class="flex-1 ml-56">
@@ -71,8 +82,8 @@ templ adminRail(active string) {
 			<div class="mono text-[10px] tracking-[0.4em] text-muted mt-1 ml-4">CONSOLE</div>
 		</div>
 		<nav class="flex-1 py-4 text-sm">
-			@railLink("overview", active, "/admin", "Genel Bakış")
-			@railLink("days",     active, "/admin/days",    "Eğitimler")
+			@railLink("overview", active, localePrefix(i18n.FromContext(ctx))+"/admin", "Genel Bakış")
+			@railLink("days",     active, localePrefix(i18n.FromContext(ctx))+"/admin/days", "Eğitimler")
 			<div class="px-5 pt-5 pb-1 text-[10px] tracking-wider text-muted uppercase">Diller</div>
 			<a href="/en/admin" class="nav-item block px-5 py-2 text-white/70 border-l-2 border-transparent hover:text-accent hover:border-accent transition">
 				<span class="mr-2">🇬🇧</span> English
@@ -83,9 +94,23 @@ templ adminRail(active string) {
 		</nav>
 		<div class="px-5 py-4 border-t border-line text-[11px] text-muted">
 			<div class="mono">v0.1.0 · dev</div>
-			<a href="/" class="block mt-2 text-white/70 hover:text-accent transition">← Siteye dön</a>
+			<a href={ templ.SafeURL(localePrefix(i18n.FromContext(ctx))+"/") } class="block mt-2 text-white/70 hover:text-accent transition">← Siteye dön</a>
 		</div>
 	</aside>
+}
+
+func localePrefix(locale string) string {
+	if locale == "en" || locale == "bg" {
+		return "/" + locale
+	}
+	return ""
+}
+
+func langChip(lang, current string) string {
+	if lang == current {
+		return "chip mono text-[10px] px-2 py-1 rounded font-bold bg-accent text-ink-900 border border-accent"
+	}
+	return "chip mono text-[10px] px-2 py-1 rounded text-muted border border-line hover:text-white hover:border-accent transition"
 }
 
 templ railLink(key, active, href, label string) {
@@ -102,7 +127,10 @@ templ adminTopbar(title string) {
 			<span class="mono text-[11px] text-muted">/</span>
 			<h1 class="text-sm font-semibold text-white">{ title }</h1>
 		</div>
-		<div class="flex items-center gap-3">
+		<div class="flex items-center gap-1.5">
+			<a href="/admin" class={ langChip("tr", i18n.FromContext(ctx)) }>🇹🇷 TR</a>
+			<a href="/en/admin" class={ langChip("en", i18n.FromContext(ctx)) }>🇬🇧 EN</a>
+			<a href="/bg/admin" class={ langChip("bg", i18n.FromContext(ctx)) }>🇧🇬 BG</a>
 			<span class="chip mono text-[10px] px-2 py-1 rounded text-muted">env: dev</span>
 			<form method="POST" action="/logout">
 				<button class="mono text-[11px] px-3 py-1.5 rounded border border-line text-white/80 hover:text-accent hover:border-accent transition">
