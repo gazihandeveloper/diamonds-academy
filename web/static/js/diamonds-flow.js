@@ -137,6 +137,16 @@
         await postJSON('/api/slot-complete', { day_no: dayNo, slot: slot });
       } catch (_) {}
     },
+
+    // Quiz sorusu olmayan günlerde "Eğitimi Tamamla" butonu için.
+    async forceCompleteQuiz() {
+      const dayNo = currentDayNo();
+      if (!dayNo) return;
+      try {
+        await postJSON('/api/slot-complete', { day_no: dayNo, slot: 'quiz' });
+      } catch (_) {}
+      window.location.href = '/';
+    },
   };
 
   window.DiamondsFlow = Flow;
