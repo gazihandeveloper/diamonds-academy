@@ -63,7 +63,7 @@ func main() {
 		log.Warn("session db migrate", slog.String("err", err.Error()))
 	}
 
-	sm := session.New(sessionConn, cfg.SessionLifetime)
+	sm := session.New(sessionConn, cfg.SessionLifetime, !cfg.IsDev())
 
 	r := server.NewRouter(server.Deps{
 		Logger:  log,
