@@ -13,57 +13,57 @@ type DaysListProps struct {
 templ DaysList(p DaysListProps) {
 	@layouts.AdminBase("Eğitimler", "days") {
 		if p.Flash != "" {
-			<div class="mb-4 px-4 py-2 rounded border border-accent/30 bg-accent/10 text-accent text-sm mono">
+			<div class="px-4 py-3 rounded-lg text-sm font-medium" style="background:var(--primary-container);color:var(--on-primary-container)">
 				{ p.Flash }
 			</div>
 		}
-		<section class="card rounded-lg overflow-hidden">
-			<div class="flex items-center justify-between px-5 py-3 border-b border-line">
+		<section class="md3-card overflow-hidden">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
 				<div>
-		<h2 class="text-sm font-semibold text-white">Eğitimler</h2>
-		<p class="text-[11px] text-muted mono">21 eğitimlik programın tüm modülleri</p>
+					<h2 class="text-base font-semibold" style="color:var(--on-surface)">Eğitimler</h2>
+		<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">Tüm eğitim modüllerini yönetin</p>
 				</div>
-				<a href="/admin/days/new" class="mono text-[11px] px-3 py-1.5 rounded bg-accent text-ink-900 font-semibold hover:bg-accent-soft hover:text-white transition">
-					+ YENİ EĞİTİM
-				</a>
+				<a href="/admin/days/new" class="btn-filled text-sm py-2 px-5 no-underline w-full sm:w-auto text-center">+ YENİ EĞİTİM</a>
 			</div>
-			<table class="w-full text-left text-sm">
-				<thead class="text-[11px] uppercase tracking-wider text-muted bg-ink-700/40">
+			<div class="overflow-x-auto">
+			<table class="md3-table">
+				<thead>
 					<tr>
-						<th class="px-5 py-2.5 mono w-16">EĞİTİM</th>
-						<th class="px-5 py-2.5">Başlık</th>
-						<th class="px-5 py-2.5">Maddeler</th>
-						<th class="px-5 py-2.5 w-28">Durum</th>
-						<th class="px-5 py-2.5 w-40 text-right">İşlem</th>
+						<th class="px-6">EĞİTİM</th>
+						<th class="px-6">Başlık</th>
+						<th class="px-6">İçerik</th>
+						<th class="px-6">Durum</th>
+						<th class="px-6 text-right">İşlem</th>
 					</tr>
 				</thead>
 				<tbody>
 					if len(p.Days) == 0 {
-						<tr><td colspan="5" class="px-5 py-6 text-center text-muted text-xs">Henüz eğitim eklenmedi.</td></tr>
+						<tr><td colspan="5" class="px-6 py-10 text-center text-sm" style="color:var(--on-surface-variant)">Henüz eğitim eklenmedi.</td></tr>
 					}
 					for _, d := range p.Days {
-						<tr class="border-t border-line hover:bg-ink-700/40 transition">
-							<td class="px-5 py-3 mono text-accent">{ itoa2(d.DayNo) }</td>
-							<td class="px-5 py-3 text-white">{ d.Title }</td>
-							<td class="px-5 py-3 text-white/70 text-xs">{ joinBullets(d.Bullets) }</td>
-							<td class="px-5 py-3">
+						<tr>
+							<td class="px-6 mono text-sm font-semibold" style="color:var(--primary)">{ itoa2(d.DayNo) }</td>
+							<td class="px-6" style="color:var(--on-surface)">{ d.Title }</td>
+							<td class="px-6 text-xs" style="color:var(--on-surface-variant)">{ joinBullets(d.Bullets) }</td>
+							<td class="px-6">
 								if d.Published {
-									<span class="mono text-[10px] tracking-wider px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/30">YAYINDA</span>
+									<span class="md3-badge" style="background:var(--primary-container);color:var(--on-primary-container)">YAYINDA</span>
 								} else {
-									<span class="mono text-[10px] tracking-wider px-2 py-0.5 rounded chip text-white/60">TASLAK</span>
+									<span class="md3-badge" style="background:var(--surface-variant);color:var(--on-surface-variant)">TASLAK</span>
 								}
 							</td>
-							<td class="px-5 py-3 text-right">
-								<a href={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/edit") } class="mono text-[11px] px-2 py-1 rounded border border-line text-white/80 hover:text-accent hover:border-accent transition">DÜZENLE</a>
+							<td class="px-6 text-right whitespace-nowrap">
+								<a href={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/edit") } class="btn-text text-sm py-1 px-3 inline-flex">DÜZENLE</a>
 								<form method="POST" action={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/delete") } class="inline"
 									onsubmit="return confirm('Bu eğitimi silmek istediğine emin misin?');">
-									<button class="mono text-[11px] px-2 py-1 rounded border border-line text-white/60 hover:text-red-400 hover:border-red-400 transition ml-1">SİL</button>
+									<button class="btn-text text-sm py-1 px-3" style="color:var(--error)">SİL</button>
 								</form>
 							</td>
 						</tr>
 					}
 				</tbody>
 			</table>
+			</div>
 		</section>
 	}
 }
@@ -83,123 +83,251 @@ type DayFormProps struct {
 	FilePath    string
 	QuizText    string
 	QuizJSON    string
+	QuizJSON_EN string
+	QuizJSON_BG string
+	TranscriptText string
 	Error       string
 }
 
 templ DayForm(p DayFormProps) {
 	@layouts.AdminBase(formTitle(p.IsEdit), "days") {
-		<div class="max-w-3xl">
+		<div class="w-full">
 			if p.Error != "" {
-				<div class="mb-4 px-4 py-2 rounded border border-red-400/40 bg-red-500/10 text-red-300 text-sm">{ p.Error }</div>
+				<div class="px-4 py-3 rounded-lg text-sm font-medium" style="background:var(--error-container);color:var(--on-error-container)">{ p.Error }</div>
 			}
-			<form method="POST" action={ formAction(p) } enctype="multipart/form-data" class="card rounded-lg p-6 space-y-5">
-				<div class="grid grid-cols-3 gap-4">
+			<form method="POST" action={ formAction(p) } enctype="multipart/form-data" class="md3-card p-4 sm:p-6 space-y-6">
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div>
-						<label class="mono text-[10px] tracking-[0.2em] text-muted">EĞİTİM NO</label>
+						<label class="md3-label">EĞİTİM NO</label>
 						<input type="number" name="day_no" min="1" required
 							value={ itoa(p.DayNo) }
-							class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none mono"/>
+							class="md3-outlined mono"/>
 					</div>
 					<div class="col-span-2">
-						<label class="mono text-[10px] tracking-[0.2em] text-muted">BAŞLIK</label>
+						<label class="md3-label">BAŞLIK</label>
 						<input type="text" name="title" required
 							value={ p.Title }
-							class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none"/>
+							class="md3-outlined"/>
 					</div>
 				</div>
 
 				<div>
-					<label class="mono text-[10px] tracking-[0.2em] text-muted">MADDELER (her satır bir madde)</label>
+					<label class="md3-label">İÇERİK BAŞLIKLARI (her satıra bir başlık)</label>
 					<textarea name="bullets" rows="4"
-						class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none">{ p.BulletsText }</textarea>
+						class="md3-outlined">{ p.BulletsText }</textarea>
 				</div>
 
 				<div>
-					<label class="mono text-[10px] tracking-[0.2em] text-muted">AÇIKLAMA</label>
+					<label class="md3-label">DERS AÇIKLAMASI</label>
 					<textarea name="description" rows="6"
-						class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none">{ p.Description }</textarea>
+						class="md3-outlined">{ p.Description }</textarea>
 				</div>
 
-				<div class="pt-4 border-t border-line">
-					<div class="mono text-[10px] tracking-[0.3em] text-accent mb-3">DERS VİDEOLARI</div>
-					<div class="space-y-3">
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
+					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">DERS VİDEOLARI</div>
+					<div class="space-y-4">
 						<div>
-							<label class="mono text-[10px] tracking-[0.2em] text-muted">DERS 01 — VİDEO URL</label>
-							<input type="url" name="video1_url" value={ p.Video1URL } placeholder="https://..."
-								class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none mono text-sm"/>
+							<label class="md3-label">DERS 01 — VİDEO URL</label>
+							<div class="flex gap-2">
+								<input type="url" name="video1_url" value={ p.Video1URL } placeholder="https://..."
+									class="md3-outlined mono text-sm flex-1"/>
+								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video1URL }>Altyazı Çek</button>
+							</div>
 						</div>
 						<div>
-							<label class="mono text-[10px] tracking-[0.2em] text-muted">DERS 02 — VİDEO URL</label>
-							<input type="url" name="video2_url" value={ p.Video2URL } placeholder="https://..."
-								class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none mono text-sm"/>
+							<label class="md3-label">DERS 02 — VİDEO URL</label>
+							<div class="flex gap-2">
+								<input type="url" name="video2_url" value={ p.Video2URL } placeholder="https://..."
+									class="md3-outlined mono text-sm flex-1"/>
+								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video2URL }>Altyazı Çek</button>
+							</div>
 						</div>
 						<div>
-							<label class="mono text-[10px] tracking-[0.2em] text-muted">DERS 03 — VİDEO URL</label>
-							<input type="url" name="video3_url" value={ p.Video3URL } placeholder="https://..."
-								class="mt-1 w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none mono text-sm"/>
+							<label class="md3-label">DERS 03 — VİDEO URL</label>
+							<div class="flex gap-2">
+								<input type="url" name="video3_url" value={ p.Video3URL } placeholder="https://..."
+									class="md3-outlined mono text-sm flex-1"/>
+								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video3URL }>Altyazı Çek</button>
+							</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="pt-4 border-t border-line">
-					<div class="mono text-[10px] tracking-[0.3em] text-accent mb-3">ÖZEL DOSYA (PDF)</div>
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
+					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">DERS DOSYASI (PDF)</div>
 					if p.FilePath != "" {
-						<div class="flex items-center gap-3 mb-3 px-3 py-2 rounded bg-ink-900 border border-line">
-							<a href={ templ.SafeURL(p.FilePath) } target="_blank" rel="noopener" class="text-accent text-xs mono hover:underline">{ p.FilePath }</a>
-							<label class="ml-auto flex items-center gap-2 text-[11px] text-white/70 mono cursor-pointer">
-								<input type="checkbox" name="remove_file" value="1" class="accent-red-400"/>
+						<div class="flex items-center gap-3 mb-3 px-4 py-3 rounded-lg" style="background:var(--surface-variant)">
+							<a href={ templ.SafeURL(p.FilePath) } target="_blank" rel="noopener" class="text-sm font-medium hover:underline" style="color:var(--primary)">{ p.FilePath }</a>
+							<label class="ml-auto flex items-center gap-2 text-xs cursor-pointer" style="color:var(--on-surface-variant)">
+								<input type="checkbox" name="remove_file" value="1" class="accent-primary"/>
 								Kaldır
 							</label>
 						</div>
 					}
 					<input type="file" name="file" accept="application/pdf"
-						class="text-xs mono text-white/80 file:mr-3 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-accent file:text-ink-900 file:font-semibold hover:file:bg-accent-soft hover:file:text-white"/>
-					<p class="mt-2 text-[11px] text-muted mono">Yeni dosya seçilirse mevcutun yerini alır.</p>
+						class="text-xs file:mr-3 file:px-4 file:py-2 file:rounded-[20px] file:border-0 file:bg-primary file:text-white file:font-semibold file:cursor-pointer hover:file:opacity-90" style="color:var(--on-surface-variant)"/>
+					<p class="mt-2 text-xs" style="color:var(--on-surface-variant)">Yeni dosya yüklediğinizde mevcut dosya otomatik değiştirilir.</p>
 				</div>
 
-				<div class="pt-4 border-t border-line">
-					<div class="mono text-[10px] tracking-[0.3em] text-accent mb-3">QUIZ — AÇIKLAMA / GİRİŞ</div>
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
+					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">QUIZ AÇIKLAMASI</div>
 					<textarea name="quiz_text" rows="4" placeholder="Kısa açıklama (opsiyonel)"
-						class="w-full px-3 py-2 rounded bg-ink-900 border border-line text-white focus:border-accent focus:outline-none mono text-sm">{ p.QuizText }</textarea>
+						class="md3-outlined mono text-sm">{ p.QuizText }</textarea>
 				</div>
 
-				<div class="pt-4 border-t border-line">
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
 					<div class="flex items-center justify-between mb-3">
-						<div class="mono text-[10px] tracking-[0.3em] text-accent">QUIZ SORULARI</div>
+						<div class="text-xs font-semibold tracking-wider" style="color:var(--primary)">QUIZ SORULARI</div>
 						<button type="button" id="quiz-add-question"
-							class="mono text-[11px] px-3 py-1.5 rounded bg-accent text-ink-900 font-semibold hover:bg-accent-soft hover:text-white transition inline-flex items-center gap-1">
-							<span class="text-base leading-none">+</span> SORU EKLE
+							class="btn-filled text-sm py-2 px-4 inline-flex items-center gap-1">
+							<span class="text-lg leading-none">+</span> SORU EKLE
 						</button>
 					</div>
-					<p class="text-[11px] text-muted mono mb-3">Her soruya 2-6 şık ekle ve doğru cevabı işaretle. Şıklara mouse ile tıkla.</p>
-					<div id="quiz-questions" class="space-y-2"></div>
+					<p class="text-xs mb-3" style="color:var(--on-surface-variant)">Her soru için 2-6 seçenek ekleyin ve doğru cevabı işaretleyin.</p>
+					<div id="quiz-questions" class="space-y-3"></div>
 					<textarea name="quiz_json" id="quiz-json-output" class="hidden">{ p.QuizJSON }</textarea>
+					<input type="hidden" name="quiz_json_en" id="quiz-json-en-output" value={ p.QuizJSON_EN }/>
+					<input type="hidden" name="quiz_json_bg" id="quiz-json-bg-output" value={ p.QuizJSON_BG }/>
 					<details class="mt-3">
-						<summary class="text-[10px] mono text-muted cursor-pointer hover:text-accent">Ham JSON görünümü</summary>
-						<pre id="quiz-json-preview" class="mt-2 p-2 rounded bg-ink-900 border border-line text-[11px] mono text-white/70 overflow-x-auto"></pre>
+						<summary class="text-xs cursor-pointer font-medium" style="color:var(--on-surface-variant);hover:color:var(--primary)">JSON ÖNİZLEME</summary>
+						<pre id="quiz-json-preview" class="mt-2 p-3 rounded-lg text-xs mono overflow-x-auto" style="background:var(--surface-variant);color:var(--on-surface-variant)"></pre>
 					</details>
+					<div class="mt-6 pt-6 border-t flex items-center gap-3" style="border-color:var(--outline-variant)">
+						<button type="button" id="quiz-auto-translate"
+							class="btn-outlined text-sm py-2 px-4">
+							OTOMATİK ÇEVİRİ
+						</button>
+						<span id="quiz-translate-status" class="text-xs hidden" style="color:var(--on-surface-variant)"></span>
+					</div>
+					<div id="quiz-translated-preview" class="mt-4 hidden space-y-3">
+						<div>
+							<div class="md3-label mb-2">İNGİLİZCE (EN) — ÖNİZLEME</div>
+							<pre id="quiz-en-preview" class="p-3 rounded-lg text-xs mono overflow-x-auto max-h-40" style="background:var(--surface-variant);color:var(--on-surface-variant)"></pre>
+						</div>
+						<div>
+							<div class="md3-label mb-2">BULGARCA (BG) — ÖNİZLEME</div>
+							<pre id="quiz-bg-preview" class="p-3 rounded-lg text-xs mono overflow-x-auto max-h-40" style="background:var(--surface-variant);color:var(--on-surface-variant)"></pre>
+						</div>
+					</div>
 				</div>
 
-				<div class="pt-4 border-t border-line">
-					<label class="flex items-center gap-2 px-3 py-2 rounded bg-ink-900 border border-line cursor-pointer w-fit">
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
+					<label class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer w-fit" style="background:var(--surface-variant)">
 						if p.Published {
-							<input type="checkbox" name="published" value="1" checked class="accent-accent"/>
+							<input type="checkbox" name="published" value="1" checked class="w-4 h-4 accent-primary"/>
 						} else {
-							<input type="checkbox" name="published" value="1" class="accent-accent"/>
+							<input type="checkbox" name="published" value="1" class="w-4 h-4 accent-primary"/>
 						}
-						<span class="mono text-[11px] text-white/80">YAYINLA</span>
+						<span class="text-sm font-medium" style="color:var(--on-surface)">YAYINLA</span>
 					</label>
 				</div>
 
-				<div class="flex items-center gap-3 pt-2 border-t border-line">
-					<button type="submit" class="mono text-[11px] px-4 py-2 rounded bg-accent text-ink-900 font-semibold hover:bg-accent-soft hover:text-white transition">
+				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
+					<div class="text-xs font-semibold tracking-wider mb-3" style="color:var(--primary)">TRANSKRİPT (zaman damgalı)</div>
+					<textarea name="transcript" rows="6" placeholder="(00:00) Metin...&#10;(00:30) Metin devamı..."
+						class="md3-outlined mono text-sm">{ p.TranscriptText }</textarea>
+					<p class="mt-2 text-xs" style="color:var(--on-surface-variant)">Her satır başına (dk:sn) formatında zaman damgası koyun. Kaydedince otomatik VTT'ye çevrilir ve EN/BG'ye tercüme edilir.</p>
+				</div>
+
+				<div class="flex items-center gap-3 pt-6 border-t" style="border-color:var(--outline-variant)">
+					<button type="submit" class="btn-filled text-sm py-2.5 px-6">
 						KAYDET
 					</button>
-					<a href="/admin/days" class="mono text-[11px] px-4 py-2 rounded border border-line text-white/70 hover:text-white transition">
+					<a href="/admin/days" class="btn-outlined text-sm py-2.5 px-6 no-underline">
 						İPTAL
 					</a>
 				</div>
 			</form>
 		</div>
+		<script>
+			(function() {
+				var btn = document.getElementById('quiz-auto-translate');
+				var statusEl = document.getElementById('quiz-translate-status');
+				var preview = document.getElementById('quiz-translated-preview');
+				var enPreview = document.getElementById('quiz-en-preview');
+				var bgPreview = document.getElementById('quiz-bg-preview');
+				var enHidden = document.getElementById('quiz-json-en-output');
+				var bgHidden = document.getElementById('quiz-json-bg-output');
+				if (!btn) return;
+
+				var dayId = 0;
+				var m = window.location.pathname.match(/\/admin\/days\/(\d+)\/edit/);
+				if (m) dayId = parseInt(m[1], 10);
+
+				btn.addEventListener('click', function() {
+					var src = document.getElementById('quiz-json-output');
+					if (!src || !src.value.trim()) {
+						alert('Önce soru ekleyin.');
+						return;
+					}
+					btn.disabled = true;
+					btn.textContent = 'ÇEVİRİLİYOR...';
+					if (statusEl) { statusEl.classList.remove('hidden'); statusEl.textContent = 'Çeviri yapılıyor...'; }
+
+					var body = {quiz_json: src.value};
+					if (dayId > 0) body.day_id = dayId;
+
+					fetch('/admin/days/auto-translate', {
+						method: 'POST',
+						headers: {'Content-Type': 'application/json'},
+						body: JSON.stringify(body)
+					})
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						if (enHidden) enHidden.value = data.quiz_json_en || '';
+						if (bgHidden) bgHidden.value = data.quiz_json_bg || '';
+						if (enPreview) enPreview.textContent = data.quiz_json_en || '(çeviri yapılamadı)';
+						if (bgPreview) bgPreview.textContent = data.quiz_json_bg || '(çeviri yapılamadı)';
+						if (preview) preview.classList.remove('hidden');
+						if (data.saved) {
+							if (statusEl) { statusEl.textContent = 'Çeviri DB\'ye kaydedildi!'; statusEl.style.color = '#4ade80'; }
+							btn.classList.add('bg-green-500/20', 'border-green-500/40', 'text-green-400');
+							btn.textContent = '✓ KAYDEDİLDİ';
+						} else {
+							if (statusEl) { statusEl.textContent = dayId > 0 ? 'Kaydedilemedi, manuel kaydedin.' : 'Önizleme — Kaydet\'e basın.'; }
+					btn.textContent = 'OTOMATİK ÇEVİRİ';
+					}
+					btn.disabled = false;
+						setTimeout(function() { if (statusEl) statusEl.classList.add('hidden'); }, 4000);
+					})
+					.catch(function(err) {
+						if (statusEl) { statusEl.textContent = 'Hata: ' + err; }
+						btn.disabled = false;
+						btn.textContent = 'OTO-ÇEVİRİ (EN/BG)';
+					});
+				});
+			})();
+		</script>
+		<script>
+			document.querySelectorAll('.transcript-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					var url = btn.dataset.url;
+					if (!url) { alert('Video URL girin.'); return; }
+					btn.disabled = true;
+					btn.textContent = 'Çekiliyor...';
+					var form = new FormData();
+					form.append('video_url', url);
+					fetch('/admin/days/fetch-transcript', {
+						method: 'POST',
+						body: form
+					})
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						if (data.status === 'ok') {
+							btn.textContent = '✓ Çekildi';
+							btn.classList.add('bg-green-500/20', 'border-green-500/40', 'text-green-400');
+						} else {
+							btn.textContent = 'Hata';
+							alert('Altyazı çekilemedi: ' + (data.error || 'bilinmeyen hata'));
+						}
+					})
+					.catch(function(err) {
+						btn.textContent = 'Altyazı Çek';
+						alert('Hata: ' + err);
+					})
+					.finally(function() { btn.disabled = false; });
+				});
+			});
+		</script>
 	}
 }

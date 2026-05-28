@@ -65,6 +65,25 @@ func dayProgress(list []days.Day, current int) string {
 	return progressPct(indexOfDay(list, current)+1, n)
 }
 
+func youtubeVideoID(url string) string {
+	patterns := []string{"v=", "youtu.be/", "embed/", "shorts/"}
+	for _, p := range patterns {
+		idx := strings.Index(url, p)
+		if idx >= 0 {
+			start := idx + len(p)
+			end := strings.IndexAny(url[start:], "?&#")
+			if end < 0 {
+				end = len(url[start:])
+			}
+			id := url[start : start+end]
+			if len(id) >= 6 {
+				return id
+			}
+		}
+	}
+	return ""
+}
+
 func tabTitle(key, dayTitle string) string {
 	switch key {
 	case "l1":

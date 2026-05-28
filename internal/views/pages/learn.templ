@@ -82,6 +82,7 @@ templ Learn(p LearnProps) {
 			data-day-no={ itoa(p.Day.DayNo) }
 			data-active-tab={ p.ActiveTab }
 			data-user-email={ p.UserEmail }
+			data-locale={ i18n.FromContext(ctx) }
 		>
 			<header class="flex items-center justify-between px-6 py-3 border-b border-white/5">
 				<a href="/" class="flex items-center gap-3">
@@ -210,7 +211,7 @@ templ videoBlock(slot, url string) {
 			<div class="text-white/40 text-base">{ i18n.TC(ctx, "learn.no_video") }</div>
 		</div>
 	} else {
-		<div data-diamonds-player data-slot={ slot } data-src={ url } data-block-download="true" class="w-full"></div>
+		<div data-diamonds-player data-slot={ slot } data-src={ url } data-locale={ i18n.FromContext(ctx) } class="w-full"></div>
 	}
 }
 

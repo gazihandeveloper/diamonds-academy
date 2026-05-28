@@ -12,9 +12,6 @@ templ Base(title, theme string) {
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
 			<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
-			<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js" defer></script>
-			<script src="/static/js/diamonds-player.js" defer></script>
-			<script src="/static/js/diamonds-flow.js" defer></script>
 			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 			<script>
 				tailwind.config = {
@@ -59,10 +56,13 @@ templ Base(title, theme string) {
 					--plyr-font-family: 'Inter', system-ui, sans-serif;
 				}
 				.plyr { border-radius: 1rem; overflow: hidden; box-shadow: 0 0 40px rgba(168,85,247,.15); }
-				</style>
+			</style>
 		</head>
 		<body class="text-white min-h-screen">
 			{ children... }
+			<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+			<script src="/static/js/diamonds-flow.js"></script>
+			<script src="/static/js/plyr-init.js?v=3"></script>
 		</body>
 	</html>
 }

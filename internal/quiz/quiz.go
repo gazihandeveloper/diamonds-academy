@@ -17,6 +17,30 @@ type Question struct {
 	Correct int      `json:"correct"` // 0-tabanlı doğru index
 }
 
+const (
+	rawKeyTR = "tr"
+	rawKeyEN = "en"
+	rawKeyBG = "bg"
+)
+
+// ParseForLocale picks the correct quiz JSON based on locale.
+// rawTR is always required (Turkish, the primary content).
+// rawEN and rawBG may be empty — if empty, falls back to Turkish.
+func ParseForLocale(rawTR, rawEN, rawBG, locale string) []Question {
+	raw := rawTR
+	switch locale {
+	case rawKeyEN:
+		if rawEN != "" {
+			raw = rawEN
+		}
+	case rawKeyBG:
+		if rawBG != "" {
+			raw = rawBG
+		}
+	}
+	return Parse(raw)
+}
+
 func Parse(raw string) []Question {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

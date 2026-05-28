@@ -11,9 +11,10 @@ import (
 
 	"github.com/diamondsacademy/diamonds/internal/auth"
 	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/progress"
-	"github.com/diamondsacademy/diamonds/internal/session"
 	"github.com/diamondsacademy/diamonds/internal/quiz"
+	"github.com/diamondsacademy/diamonds/internal/session"
 	"github.com/diamondsacademy/diamonds/internal/views/components"
 	"github.com/diamondsacademy/diamonds/internal/views/pages"
 )
@@ -100,13 +101,58 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		Sidebar:          h.sidebarFromSession(r),
 		Days:             published,
 		CurrentDay:       current.DayNo,
-		DayTitle:         current.Title,
-		Bullets:          current.Bullets,
-		Description:      current.Description,
+		DayTitle:         localizedDayTitle(current, r),
+		Bullets:          localizedBullets(current, r),
+		Description:      localizedDescription(current, r),
 		CompletedDays:    completedDays,
 		CompletedQuizzes: completedQuizzes,
 		AllCompleted:     allCompleted,
 	}))
+}
+
+func localizedDayTitle(d days.Day, r *http.Request) string {
+	locale := i18n.FromContext(r.Context())
+	switch locale {
+	case i18n.LocaleEN:
+		if d.Title_EN != "" {
+			return d.Title_EN
+		}
+	case i18n.LocaleBG:
+		if d.Title_BG != "" {
+			return d.Title_BG
+		}
+	}
+	return d.Title
+}
+
+func localizedBullets(d days.Day, r *http.Request) []string {
+	locale := i18n.FromContext(r.Context())
+	switch locale {
+	case i18n.LocaleEN:
+		if len(d.Bullets_EN) > 0 {
+			return d.Bullets_EN
+		}
+	case i18n.LocaleBG:
+		if len(d.Bullets_BG) > 0 {
+			return d.Bullets_BG
+		}
+	}
+	return d.Bullets
+}
+
+func localizedDescription(d days.Day, r *http.Request) string {
+	locale := i18n.FromContext(r.Context())
+	switch locale {
+	case i18n.LocaleEN:
+		if d.Description_EN != "" {
+			return d.Description_EN
+		}
+	case i18n.LocaleBG:
+		if d.Description_BG != "" {
+			return d.Description_BG
+		}
+	}
+	return d.Description
 }
 
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
@@ -143,7 +189,13 @@ func (h *Handler) Learn(w http.ResponseWriter, r *http.Request) {
 	completed, _ := h.Progress.CompletedSlots(r.Context(), uid, dayNo)
 
 	// Tüm slotlar her zaman açık — sıralı kilit yok.
-	questions := quiz.Parse(d.QuizJSON)
+	locale := i18n.FromContext(r.Context())
+	questions := quiz.ParseForLocale(d.QuizJSON, d.QuizJSON_EN, d.QuizJSON_BG, locale)
+
+	// Day metinlerini dile göre localize et
+	d.Title = localizedDayTitle(*d, r)
+	d.Description = localizedDescription(*d, r)
+	d.Bullets = localizedBullets(*d, r)
 
 	render(w, r, pages.Learn(pages.LearnProps{
 		Day:       *d,

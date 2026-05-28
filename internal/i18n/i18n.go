@@ -23,18 +23,52 @@ const (
 
 const DefaultLocale = LocaleTR
 
+var Locales = []string{LocaleTR, LocaleEN, LocaleBG}
+
+func LocaleNext(current string) string {
+	for i, l := range Locales {
+		if l == current {
+			return Locales[(i+1)%len(Locales)]
+		}
+	}
+	return LocaleTR
+}
+
+func LocaleUpper(current string) string {
+	return strings.ToUpper(current)
+}
+
 var (
 	trData = defaultTR()
 	enData = defaultEN()
 	bgData = defaultBG()
 
 	mu sync.RWMutex
+
+	// Cached at startup — avoids syscall per request
+	forcedLocale = os.Getenv("APP_LOCALE")
+
+	// Package-level to avoid allocation per DetectFromHeader call
+	supportedLocales = map[string]bool{LocaleTR: true, LocaleEN: true, LocaleBG: true}
 )
 
 type ctxKey struct{}
 
 func ContextWithLocale(ctx context.Context, locale string) context.Context {
 	return context.WithValue(ctx, ctxKey{}, locale)
+}
+
+type themeCtxKey struct{}
+
+func ContextWithTheme(ctx context.Context, theme string) context.Context {
+	return context.WithValue(ctx, themeCtxKey{}, theme)
+}
+
+func ThemeFromContext(ctx context.Context) string {
+	if t, ok := ctx.Value(themeCtxKey{}).(string); ok && t != "" {
+		return t
+	}
+	return "light"
 }
 
 func FromContext(ctx context.Context) string {
@@ -48,7 +82,6 @@ func DetectFromHeader(acceptLang string) string {
 	if acceptLang == "" {
 		return DefaultLocale
 	}
-	supported := map[string]bool{LocaleTR: true, LocaleEN: true, LocaleBG: true}
 	entries := strings.Split(strings.ToLower(acceptLang), ",")
 	bestQ := -1.0
 	bestLang := DefaultLocale
@@ -70,7 +103,7 @@ func DetectFromHeader(acceptLang string) string {
 				fmt.Sscanf(qStr, "q=%f", &q)
 			}
 		}
-		if supported[lang] && q > bestQ {
+		if supportedLocales[lang] && q > bestQ {
 			bestQ = q
 			bestLang = lang
 		}
@@ -81,10 +114,9 @@ func DetectFromHeader(acceptLang string) string {
 func Middleware(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			forced := os.Getenv("APP_LOCALE")
-			if isValid(forced) {
-				sm.Put(r.Context(), session.KeyLocale, forced)
-				ctx := ContextWithLocale(r.Context(), forced)
+			if isValid(forcedLocale) {
+				sm.Put(r.Context(), session.KeyLocale, forcedLocale)
+				ctx := ContextWithLocale(r.Context(), forcedLocale)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
@@ -94,6 +126,13 @@ func Middleware(sm *scs.SessionManager) func(http.Handler) http.Handler {
 				sm.Put(r.Context(), session.KeyLocale, locale)
 			}
 			ctx := ContextWithLocale(r.Context(), locale)
+
+			theme := sm.GetString(r.Context(), session.KeyTheme)
+			if theme == "" {
+				theme = "light"
+			}
+			ctx = ContextWithTheme(ctx, theme)
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

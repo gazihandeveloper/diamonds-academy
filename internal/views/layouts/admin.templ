@@ -2,141 +2,533 @@ package layouts
 
 import "github.com/diamondsacademy/diamonds/internal/i18n"
 
-// AdminBase is a separate layout for the admin console.
-// Tasarım dili dashboard'dan farklı: koyu slate, dar rail nav, üst bar, mono detaylar.
 templ AdminBase(title, active string) {
 	<!DOCTYPE html>
-	<html lang={ i18n.FromContext(ctx) }>
+	<html lang={ i18n.FromContext(ctx) } data-theme={ i18n.ThemeFromContext(ctx) }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
-			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 			<script>
 				tailwind.config = {
 					theme: {
 						extend: {
 							colors: {
-								ink:    { 900:'#05060a', 800:'#0b0d14', 700:'#11141d', 600:'#181c28', 500:'#222837' },
-								line:   '#222837',
-								muted:  '#8a93a6',
-								accent: { DEFAULT:'#22d3ee', soft:'#0e7490' },
+								primary: { DEFAULT:'#6a5294', container:'#d4bbff', on:'#ffffff', onContainer:'#1e0036' },
+								secondary: { DEFAULT:'#625b71', container:'#e8def8', on:'#ffffff' },
+								tertiary: { DEFAULT:'#7e5260', container:'#ffd9e2', on:'#ffffff' },
+								surface: { DEFAULT:'var(--surface)', variant:'var(--surface-variant)', on:'var(--on-surface)', onVariant:'var(--on-surface-variant)' },
+								outline: { DEFAULT:'var(--outline)', variant:'var(--outline-variant)' },
 							},
 							fontFamily: {
 								sans: ['Inter','system-ui','sans-serif'],
 								mono: ['JetBrains Mono','ui-monospace','monospace'],
+							},
+							borderRadius: {
+								md3: '12px',
+								md3sm: '8px',
+								md3xs: '4px',
+							},
+							boxShadow: {
+								'md3-1': '0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3)',
+								'md3-2': '0 2px 6px 2px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3)',
+								'md3-3': '0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3)',
+								'md3-4': '0 6px 10px 4px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.3)',
 							},
 						},
 					},
 				}
 			</script>
 			<style>
-				body { font-family: 'Inter', sans-serif; background: #05060a; color: #e6e8ee; }
-				.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-				.grid-bg {
-					background-image:
-						linear-gradient(to right, rgba(255,255,255,.03) 1px, transparent 1px),
-						linear-gradient(to bottom, rgba(255,255,255,.03) 1px, transparent 1px);
-					background-size: 32px 32px;
+				:root {
+					--primary: #6a5294;
+					--on-primary: #ffffff;
+					--primary-container: #d4bbff;
+					--on-primary-container: #1e0036;
+					--secondary: #625b71;
+					--on-secondary: #ffffff;
+					--secondary-container: #e8def8;
+					--on-secondary-container: #1d192b;
+					--tertiary: #7e5260;
+					--on-tertiary: #ffffff;
+					--tertiary-container: #ffd9e2;
+					--on-tertiary-container: #31101d;
+					--error: #ba1a1a;
+					--on-error: #ffffff;
+					--error-container: #ffdad6;
+					--on-error-container: #410002;
+					--outline: #79747e;
+					--outline-variant: #c4bccb;
 				}
-				.nav-item { transition: all .15s ease; }
-				.nav-item:hover { background:#11141d; color:#fff; }
-				.nav-item.active { background:#11141d; color:#22d3ee; border-left:2px solid #22d3ee; }
-				.card { background:#0b0d14; border:1px solid #181c28; }
-				.chip { background:#11141d; border:1px solid #222837; }
+				[data-theme="light"] {
+					--surface: #fffbff;
+					--surface-variant: #e7e0ec;
+					--on-surface: #1c1b1f;
+					--on-surface-variant: #49454f;
+					--bg: #ebdcff;
+					--bg2: #fffbff;
+					--bg3: #f3edf7;
+					--nav-bg: #fffbff;
+					--nav-hover: rgba(106,82,148,0.08);
+					--nav-active: #d4bbff;
+				}
+				[data-theme="dark"] {
+					--surface: #1c1b1f;
+					--surface-variant: #49454f;
+					--on-surface: #e6e1e5;
+					--on-surface-variant: #cac4d0;
+					--bg: #130f1a;
+					--bg2: #1c1b1f;
+					--bg3: #25232b;
+					--nav-bg: #1c1b1f;
+					--nav-hover: rgba(212,187,255,0.12);
+					--nav-active: #4a3070;
+				}
+				body {
+					font-family: 'Inter', system-ui, sans-serif;
+					background: var(--bg);
+					color: var(--on-surface);
+					-webkit-font-smoothing: antialiased;
+				}
+				.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+				/* MD3 Elevation Transitions */
+				.md3-elevation-1 { box-shadow: 0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3); }
+				.md3-elevation-2 { box-shadow: 0 2px 6px 2px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3); }
+				.md3-elevation-3 { box-shadow: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3); }
+				.md3-card {
+					background: var(--surface);
+					border-radius: 12px;
+					box-shadow: 0 1px 3px 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+					transition: box-shadow 0.2s ease, transform 0.2s ease;
+				}
+				.md3-card:hover {
+					box-shadow: 0 2px 6px 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+				}
+
+				/* MD3 Navigation Rail */
+				.nav-rail { background: var(--nav-bg); }
+				.nav-item {
+					display: flex;
+					align-items: center;
+					gap: 12px;
+					padding: 10px 16px;
+					margin: 2px 12px;
+					border-radius: 28px;
+					color: var(--on-surface-variant);
+					font-size: 14px;
+					font-weight: 500;
+					letter-spacing: 0.01em;
+					transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+					position: relative;
+					text-decoration: none;
+				}
+				.nav-item:hover {
+					background: var(--nav-hover);
+					color: var(--primary);
+				}
+				.nav-item.active {
+					background: var(--nav-active);
+					color: var(--on-primary-container);
+					font-weight: 600;
+				}
+				.nav-item .nav-icon {
+					width: 20px;
+					height: 20px;
+					flex-shrink: 0;
+					opacity: 0.7;
+				}
+				.nav-item.active .nav-icon {
+					opacity: 1;
+				}
+				.nav-item.active::before {
+					display: none;
+				}
+
+				/* MD3 Top App Bar */
+				.top-app-bar {
+					background: rgba(255,251,255,0.85);
+					backdrop-filter: blur(20px);
+					-webkit-backdrop-filter: blur(20px);
+					border-bottom: 1px solid var(--outline-variant);
+				}
+				[data-theme="dark"] .top-app-bar {
+					background: rgba(28,27,31,0.85);
+				}
+
+				/* MD3 Filled Button */
+				.btn-filled {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					padding: 10px 24px;
+					border-radius: 20px;
+					background: var(--primary);
+					color: var(--on-primary);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 14px;
+					font-weight: 600;
+					letter-spacing: 0.01em;
+					border: none;
+					cursor: pointer;
+					transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+					box-shadow: 0 1px 3px 1px rgba(0,0,0,0.15);
+				}
+				.btn-filled:hover {
+					box-shadow: 0 2px 6px 2px rgba(106,82,148,0.3);
+					background: #7a62a4;
+				}
+				.btn-filled:active {
+					box-shadow: 0 1px 3px 1px rgba(0,0,0,0.15);
+					background: #5a4284;
+				}
+
+				/* MD3 Text Button */
+				.btn-text {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					padding: 10px 12px;
+					border-radius: 20px;
+					background: transparent;
+					color: var(--primary);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 14px;
+					font-weight: 600;
+					letter-spacing: 0.01em;
+					border: none;
+					cursor: pointer;
+					transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+				}
+				.btn-text:hover { background: rgba(106,82,148,0.08); }
+				.btn-text:active { background: rgba(106,82,148,0.12); }
+
+				/* MD3 Outlined Button */
+				.btn-outlined {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					padding: 9px 23px;
+					border-radius: 20px;
+					background: transparent;
+					color: var(--primary);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 14px;
+					font-weight: 600;
+					letter-spacing: 0.01em;
+					border: 1px solid var(--outline);
+					cursor: pointer;
+					transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+				}
+				.btn-outlined:hover { background: rgba(106,82,148,0.08); border-color: var(--primary); }
+				.btn-outlined:active { background: rgba(106,82,148,0.12); }
+
+				/* MD3 Inputs */
+				.md3-input {
+					width: 100%;
+					padding: 12px 16px;
+					border-radius: 4px 4px 0 0;
+					border: none;
+					border-bottom: 1px solid var(--outline);
+					background: var(--surface-variant);
+					color: var(--on-surface);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 16px;
+					transition: all 0.2s ease;
+					outline: none;
+				}
+				.md3-input:hover { border-bottom-width: 2px; border-bottom-color: var(--on-surface-variant); }
+				.md3-input:focus {
+					border-bottom: 2px solid var(--primary);
+					background: var(--surface-variant);
+				}
+				.md3-input::placeholder { color: var(--on-surface-variant); opacity: 0.7; }
+
+				/* MD3 Outlined Input */
+				.md3-outlined {
+					width: 100%;
+					padding: 14px 16px;
+					border-radius: 4px;
+					border: 1px solid var(--outline);
+					background: transparent;
+					color: var(--on-surface);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 14px;
+					transition: all 0.2s ease;
+					outline: none;
+				}
+				.md3-outlined:hover { border-color: var(--on-surface-variant); }
+				.md3-outlined:focus {
+					border: 2px solid var(--primary);
+					padding: 13px 15px;
+				}
+				.md3-outlined::placeholder { color: var(--on-surface-variant); opacity: 0.7; }
+				.md3-label {
+					display: block;
+					font-size: 12px;
+					font-weight: 500;
+					letter-spacing: 0.02em;
+					color: var(--on-surface-variant);
+					margin-bottom: 4px;
+				}
+				.md3-select {
+					width: 100%;
+					padding: 14px 16px;
+					border-radius: 4px;
+					border: 1px solid var(--outline);
+					background: transparent;
+					color: var(--on-surface);
+					font-family: 'Inter', system-ui, sans-serif;
+					font-size: 14px;
+					transition: all 0.2s ease;
+					outline: none;
+					appearance: none;
+					background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2379747e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+					background-repeat: no-repeat;
+					background-position: right 16px center;
+					padding-right: 40px;
+				}
+
+				/* MD3 Chip */
+				.md3-chip {
+					display: inline-flex;
+					align-items: center;
+					gap: 6px;
+					padding: 6px 14px;
+					border-radius: 8px;
+					font-size: 11px;
+					font-weight: 500;
+					letter-spacing: 0.02em;
+					font-family: 'JetBrains Mono', ui-monospace, monospace;
+					transition: all 0.2s ease;
+				}
+
+				/* MD3 Table */
+				.md3-table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.md3-table th {
+					text-align: left;
+					padding: 12px 16px;
+					font-size: 11px;
+					font-weight: 600;
+					letter-spacing: 0.05em;
+					text-transform: uppercase;
+					color: var(--on-surface-variant);
+					font-family: 'JetBrains Mono', ui-monospace, monospace;
+					border-bottom: 1px solid var(--outline-variant);
+				}
+				.md3-table td {
+					padding: 14px 16px;
+					font-size: 14px;
+					border-bottom: 1px solid var(--outline-variant);
+				}
+				.md3-table tr {
+					transition: background 0.15s ease;
+				}
+				.md3-table tbody tr:hover {
+					background: rgba(106,82,148,0.04);
+				}
+
+				/* MD3 Divider */
+				.md3-divider {
+					height: 1px;
+					background: var(--outline-variant);
+					border: none;
+					margin: 0;
+				}
+
+				/* MD3 Badge/Status */
+				.md3-badge {
+					display: inline-flex;
+					align-items: center;
+					gap: 4px;
+					padding: 2px 10px;
+					border-radius: 4px;
+					font-size: 11px;
+					font-weight: 600;
+					letter-spacing: 0.03em;
+					font-family: 'JetBrains Mono', ui-monospace, monospace;
+				}
+
+				/* MD3 Skeleton animation */
+				@keyframes md3-fade-in {
+					from { opacity: 0; transform: translateY(8px); }
+					to { opacity: 1; transform: translateY(0); }
+				}
+				.md3-fade-in {
+					animation: md3-fade-in 0.3s cubic-bezier(0.2, 0, 0, 1);
+				}
+				@keyframes md3-slide-in {
+					from { opacity: 0; transform: translateX(-8px); }
+					to { opacity: 1; transform: translateX(0); }
+				}
+				.md3-slide-in {
+					animation: md3-slide-in 0.25s cubic-bezier(0.2, 0, 0, 1);
+				}
+
+				/* MD3 Scrollbar */
+				::-webkit-scrollbar { width: 6px; }
+				::-webkit-scrollbar-track { background: transparent; }
+				::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 3px; }
+				::-webkit-scrollbar-thumb:hover { background: var(--outline); }
+
+				/* MD3 Theme Toggle */
+				.theme-toggle {
+					width: 40px;
+					height: 40px;
+					border-radius: 20px;
+					border: none;
+					background: transparent;
+					cursor: pointer;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					transition: background 0.2s ease;
+					font-size: 18px;
+				}
+				.theme-toggle:hover { background: var(--nav-hover); }
+
+				/* MD3 Tabs for lang chips */
+				.lang-tab {
+					padding: 6px 12px;
+					border-radius: 20px;
+					font-size: 12px;
+					font-weight: 500;
+					font-family: 'JetBrains Mono', ui-monospace, monospace;
+					transition: all 0.2s ease;
+					cursor: pointer;
+					border: none;
+					background: transparent;
+					color: var(--on-surface-variant);
+				}
+				.lang-tab.active {
+					background: var(--primary-container);
+					color: var(--on-primary-container);
+				}
+				.lang-tab:hover:not(.active) {
+					background: var(--nav-hover);
+				}
 			</style>
 			<script src="/static/js/quiz-builder.js" defer></script>
 		</head>
-		<body class="min-h-screen grid-bg">
-			if i18n.FromContext(ctx) == "en" {
-				<div class="sticky top-0 z-50 bg-blue-600/90 backdrop-blur border-b border-blue-400/40 px-6 py-2.5 text-center text-sm text-white font-medium">
-					🇬🇧 <strong>İngilizce Paneli</strong> yönetiyorsunuz — <a href="/admin" class="underline hover:text-blue-200">🇹🇷 Türkçe panele geç</a>
-				</div>
-			} else if i18n.FromContext(ctx) == "bg" {
-				<div class="sticky top-0 z-50 bg-green-600/90 backdrop-blur border-b border-green-400/40 px-6 py-2.5 text-center text-sm text-white font-medium">
-					🇧🇬 <strong>Bulgarca Paneli</strong> yönetiyorsunuz — <a href="/admin" class="underline hover:text-green-200">🇹🇷 Türkçe panele geç</a>
-				</div>
-			}
+		<body class="min-h-screen overflow-x-hidden">
 			<div class="flex min-h-screen">
-				@adminRail(active)
-				<div class="flex-1 ml-56">
+				<!-- Mobile overlay -->
+				<div id="admin-overlay" class="fixed inset-0 z-40 bg-black/50 hidden md:hidden" onclick="toggleAdminSidebar()"></div>
+				<!-- Sidebar -->
+				<aside id="admin-sidebar" class="w-56 fixed h-screen nav-rail flex flex-col border-r z-50 transition-transform duration-300 -translate-x-full md:translate-x-0" style="border-color:var(--outline-variant)">
+					<div class="flex items-center justify-between px-5 py-5 border-b md:border-b-0" style="border-color:var(--outline-variant)">
+						<div class="flex items-center gap-3">
+							<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--primary-container);color:var(--on-primary-container)">
+								<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+							</div>
+							<div>
+								<div class="font-bold text-sm" style="color:var(--on-surface)">DIAMONDS</div>
+								<div class="mono text-[10px] tracking-[0.2em]" style="color:var(--on-surface-variant)">CONSOLE</div>
+							</div>
+						</div>
+						<button class="md:hidden p-1 rounded-full hover:bg-nav-hover transition" onclick="toggleAdminSidebar()" aria-label="Kapat">
+							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--on-surface-variant)"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+						</button>
+					</div>
+					<nav class="flex-1 py-3">
+						@railLink("overview", active, "/admin", "Genel Bakış")
+						@railLink("days",     active, "/admin/days", "Eğitimler")
+					</nav>
+				</aside>
+				<div class="flex-1 md:ml-56 min-w-0">
 					@adminTopbar(title)
-					<main class="p-8">
+					<main class="p-4 md:p-8 space-y-4 md:space-y-6 md3-fade-in max-w-full overflow-x-hidden">
 						{ children... }
 					</main>
 				</div>
 			</div>
+			<script>
+				function toggleAdminSidebar() {
+					var s = document.getElementById('admin-sidebar');
+					var o = document.getElementById('admin-overlay');
+					var isOpen = !s.classList.contains('-translate-x-full');
+					s.classList.toggle('-translate-x-full');
+					if (o) o.classList.toggle('hidden');
+					document.body.classList.toggle('overflow-hidden', !isOpen);
+				}
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape') {
+						var s = document.getElementById('admin-sidebar');
+						if (s && !s.classList.contains('-translate-x-full')) toggleAdminSidebar();
+					}
+				});
+			</script>
 		</body>
 	</html>
 }
 
-templ adminRail(active string) {
-	<aside class="w-56 fixed h-screen bg-ink-800 border-r border-line flex flex-col">
-		<div class="px-5 py-5 border-b border-line">
-			<div class="flex items-center gap-2">
-				<div class="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_#22d3ee]"></div>
-				<div class="mono text-[11px] tracking-[0.25em] text-white/80">DIAMONDS</div>
-			</div>
-			<div class="mono text-[10px] tracking-[0.4em] text-muted mt-1 ml-4">CONSOLE</div>
-		</div>
-		<nav class="flex-1 py-4 text-sm">
-			@railLink("overview", active, localePrefix(i18n.FromContext(ctx))+"/admin", "Genel Bakış")
-			@railLink("days",     active, localePrefix(i18n.FromContext(ctx))+"/admin/days", "Eğitimler")
-			<div class="px-5 pt-5 pb-1 text-[10px] tracking-wider text-muted uppercase">Diller</div>
-			<a href="/en/admin" class="nav-item block px-5 py-2 text-white/70 border-l-2 border-transparent hover:text-accent hover:border-accent transition">
-				<span class="mr-2">🇬🇧</span> English
-			</a>
-			<a href="/bg/admin" class="nav-item block px-5 py-2 text-white/70 border-l-2 border-transparent hover:text-accent hover:border-accent transition">
-				<span class="mr-2">🇧🇬</span> Български
-			</a>
-		</nav>
-		<div class="px-5 py-4 border-t border-line text-[11px] text-muted">
-			<div class="mono">v0.1.0 · dev</div>
-			<a href={ templ.SafeURL(localePrefix(i18n.FromContext(ctx))+"/") } class="block mt-2 text-white/70 hover:text-accent transition">← Siteye dön</a>
-		</div>
-	</aside>
-}
-
-func localePrefix(locale string) string {
-	if locale == "en" || locale == "bg" {
-		return "/" + locale
-	}
-	return ""
-}
-
-func langChip(lang, current string) string {
-	if lang == current {
-		return "chip mono text-[10px] px-2 py-1 rounded font-bold bg-accent text-ink-900 border border-accent"
-	}
-	return "chip mono text-[10px] px-2 py-1 rounded text-muted border border-line hover:text-white hover:border-accent transition"
-}
-
 templ railLink(key, active, href, label string) {
 	if key == active {
-		<a href={ templ.SafeURL(href) } class="nav-item active block px-5 py-2.5">{ label }</a>
+		<a href={ templ.SafeURL(href) } class="nav-item active">
+			<span class="nav-icon">@railIcon(key)</span>
+			<span>{ label }</span>
+		</a>
 	} else {
-		<a href={ templ.SafeURL(href) } class="nav-item block px-5 py-2.5 text-white/70 border-l-2 border-transparent">{ label }</a>
+		<a href={ templ.SafeURL(href) } class="nav-item">
+			<span class="nav-icon">@railIcon(key)</span>
+			<span>{ label }</span>
+		</a>
+	}
+}
+
+templ railIcon(key string) {
+	switch key {
+		case "overview":
+			<svg fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+		case "days":
+			<svg fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
 	}
 }
 
 templ adminTopbar(title string) {
-	<header class="h-14 sticky top-0 z-10 bg-ink-900/80 backdrop-blur border-b border-line flex items-center justify-between px-8">
+	<header class="top-app-bar h-16 sticky top-0 z-30 flex items-center justify-between px-4 md:px-6">
 		<div class="flex items-center gap-3">
-			<span class="mono text-[11px] text-muted">/</span>
-			<h1 class="text-sm font-semibold text-white">{ title }</h1>
+			<button class="md:hidden p-2 -ml-2 rounded-full hover:bg-nav-hover transition" onclick="toggleAdminSidebar()" aria-label="Menü">
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--on-surface-variant)"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+			</button>
+			<span class="mono text-sm hidden sm:inline" style="color:var(--on-surface-variant)">/</span>
+			<h1 class="text-base md:text-lg font-semibold truncate" style="color:var(--on-surface)">{ title }</h1>
 		</div>
-		<div class="flex items-center gap-1.5">
-			<a href="/admin" class={ langChip("tr", i18n.FromContext(ctx)) }>🇹🇷 TR</a>
-			<a href="/en/admin" class={ langChip("en", i18n.FromContext(ctx)) }>🇬🇧 EN</a>
-			<a href="/bg/admin" class={ langChip("bg", i18n.FromContext(ctx)) }>🇧🇬 BG</a>
-			<span class="chip mono text-[10px] px-2 py-1 rounded text-muted">env: dev</span>
+		<div class="flex items-center gap-1 sm:gap-2">
+			<a href="/" class="lang-tab inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3">
+				<svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+				<span class="hidden sm:inline">Siteye Git</span>
+			</a>
+			<div class="w-px h-6 mx-0.5 sm:mx-1 shrink-0" style="background:var(--outline-variant)"></div>
+			<form method="POST" action="/api/locale" class="inline">
+				<input type="hidden" name="locale" value={ i18n.LocaleNext(i18n.FromContext(ctx)) }/>
+				<button class="lang-tab text-xs font-bold" title="Dil değiştir (TR/EN/BG)">{ i18n.LocaleUpper(i18n.FromContext(ctx)) }</button>
+			</form>
+			<div class="w-px h-6 mx-0.5 sm:mx-1 shrink-0" style="background:var(--outline-variant)"></div>
+			@themeToggle()
 			<form method="POST" action="/logout">
-				<button class="mono text-[11px] px-3 py-1.5 rounded border border-line text-white/80 hover:text-accent hover:border-accent transition">
+				<button class="btn-outlined text-xs py-1.5 px-3 sm:px-4 whitespace-nowrap">
 					ÇIKIŞ
 				</button>
 			</form>
 		</div>
 	</header>
+}
+
+templ themeToggle() {
+	<form method="POST" action="/api/theme" class="inline">
+		<button type="submit" class="theme-toggle" title="Tema değiştir">
+			if i18n.ThemeFromContext(ctx) == "light" {
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--on-surface-variant)"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+			} else {
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color:var(--on-surface-variant)"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+			}
+		</button>
+	</form>
 }

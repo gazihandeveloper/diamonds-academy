@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
@@ -15,6 +17,7 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/handlers/frontend"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
 	mw "github.com/diamondsacademy/diamonds/internal/middleware"
+	"github.com/diamondsacademy/diamonds/internal/session"
 )
 
 type Deps struct {
@@ -51,6 +54,24 @@ func NewRouter(d Deps) http.Handler {
 	web.Post("/logout", authH.Logout)
 	web.Get("/register", authH.RegisterGet)
 	web.Post("/register", authH.RegisterPost)
+	web.Post("/api/locale", func(w http.ResponseWriter, r *http.Request) {
+		locale := r.FormValue("locale")
+		if locale == "tr" || locale == "en" || locale == "bg" {
+			d.SM.Put(r.Context(), session.KeyLocale, locale)
+		}
+		ref := safeReferer(r)
+		http.Redirect(w, r, ref, http.StatusSeeOther)
+	})
+	web.Post("/api/theme", func(w http.ResponseWriter, r *http.Request) {
+		cur := d.SM.GetString(r.Context(), session.KeyTheme)
+		if cur == "light" {
+			d.SM.Put(r.Context(), session.KeyTheme, "dark")
+		} else {
+			d.SM.Put(r.Context(), session.KeyTheme, "light")
+		}
+		ref := safeReferer(r)
+		http.Redirect(w, r, ref, http.StatusSeeOther)
+	})
 
 	// Protected: kullanıcı girişi zorunlu
 	web.Group(func(prot chi.Router) {
@@ -75,17 +96,39 @@ func NewRouter(d Deps) http.Handler {
 			a.Get("/days/{id}/edit", adm.DayEditGet)
 			a.Post("/days/{id}/edit", adm.DayEditPost)
 			a.Post("/days/{id}/delete", adm.DayDelete)
-			a.Get("/stats", adm.Stats)
+			a.Post("/days/auto-translate", adm.AutoTranslateQuiz)
+			a.Post("/days/fetch-transcript", adm.FetchTranscript)
 		})
 	})
 
 	r.Mount("/", web)
 
 	// REST API (token / session bağımsız iskelet)
-	apiH := api.New()
+	apiH := api.New(d.DB)
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", apiH.Health)
 	})
+	r.Get("/subtitles", apiH.CaptionsHandler)
+	r.Post("/api/captions/save", apiH.SaveCaptionsHandler)
+	r.Post("/api/captions/save-transcript", apiH.SaveTranscriptHandler)
+	r.Get("/api/captions/fetch-transcript", apiH.FetchTranscriptHandler)
 
 	return r
+}
+
+// safeReferer returns the Referer if same-origin, otherwise "/".
+func safeReferer(r *http.Request) string {
+	ref := r.Header.Get("Referer")
+	if ref == "" {
+		return "/"
+	}
+	u, err := url.Parse(ref)
+	if err != nil {
+		return "/"
+	}
+	// Only allow same-host redirects
+	if !strings.EqualFold(u.Host, r.Host) {
+		return "/"
+	}
+	return ref
 }

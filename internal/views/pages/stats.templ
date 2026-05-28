@@ -13,36 +13,37 @@ type AdminStatsProps struct {
 
 templ AdminStats(p AdminStatsProps) {
 	@layouts.AdminBase("İzleme İstatistikleri", "stats") {
-		<section class="card rounded-lg overflow-hidden">
-			<div class="px-5 py-3 border-b border-line">
-				<h2 class="text-sm font-semibold text-white">Kullanıcı İzleme Verileri</h2>
-				<p class="text-[11px] text-muted mono">SELECT * FROM watch_progress GROUP BY user</p>
+		<section class="md3-card overflow-hidden">
+			<div class="px-6 py-4 border-b" style="border-color:var(--outline-variant)">
+				<h2 class="text-base font-semibold" style="color:var(--on-surface)">Kullanıcı İzleme Verileri</h2>
+				<p class="text-xs mono mt-0.5" style="color:var(--on-surface-variant)">SELECT * FROM watch_progress GROUP BY user</p>
 			</div>
-			<table class="w-full text-left text-sm">
-				<thead class="text-[11px] uppercase tracking-wider text-muted bg-ink-700/40">
+			<div class="overflow-x-auto">
+			<table class="md3-table">
+				<thead>
 					<tr>
-						<th class="px-5 py-2.5 mono">ID</th>
-						<th class="px-5 py-2.5">E-posta</th>
-						<th class="px-5 py-2.5">İsim</th>
-						<th class="px-5 py-2.5 mono text-right">Toplam Süre</th>
-						<th class="px-5 py-2.5 mono text-right">Tamamlanan Slot</th>
-						<th class="px-5 py-2.5 mono text-right">Tamamlanan Eğitim</th>
-						<th class="px-5 py-2.5 mono">Son Aktivite</th>
+						<th class="px-6">ID</th>
+						<th class="px-6">E-posta</th>
+						<th class="px-6">İsim</th>
+						<th class="px-6 text-right">Toplam Süre</th>
+						<th class="px-6 text-right">Tamamlanan Slot</th>
+						<th class="px-6 text-right">Tamamlanan Eğitim</th>
+						<th class="px-6">Son Aktivite</th>
 					</tr>
 				</thead>
 				<tbody>
 					if len(p.Stats) == 0 {
-						<tr><td colspan="7" class="px-5 py-6 text-center text-muted text-xs">Henüz veri yok.</td></tr>
+						<tr><td colspan="7" class="px-6 py-10 text-center text-sm" style="color:var(--on-surface-variant)">Henüz veri yok.</td></tr>
 					}
 					for _, s := range p.Stats {
-						<tr class="border-t border-line hover:bg-ink-700/40 transition">
-							<td class="px-5 py-3 mono text-muted">{ itoa2(int(s.UserID)) }</td>
-							<td class="px-5 py-3 text-white">{ s.Email }</td>
-							<td class="px-5 py-3 text-white/90">{ s.Name }</td>
-							<td class="px-5 py-3 mono text-right text-white">{ fmtDur(s.TotalSeconds) }</td>
-							<td class="px-5 py-3 mono text-right text-white/90">{ itoa2(s.SlotsCompleted) }</td>
-							<td class="px-5 py-3 mono text-right text-accent">{ itoa2(s.DaysCompleted) }</td>
-							<td class="px-5 py-3 mono text-[11px] text-muted">
+						<tr>
+							<td class="px-6 mono text-sm" style="color:var(--on-surface-variant)">{ itoa2(int(s.UserID)) }</td>
+							<td class="px-6" style="color:var(--on-surface)">{ s.Email }</td>
+							<td class="px-6" style="color:var(--on-surface)">{ s.Name }</td>
+							<td class="px-6 mono text-right" style="color:var(--on-surface)">{ fmtDur(s.TotalSeconds) }</td>
+							<td class="px-6 mono text-right" style="color:var(--on-surface)">{ itoa2(s.SlotsCompleted) }</td>
+							<td class="px-6 mono text-right font-semibold" style="color:var(--primary)">{ itoa2(s.DaysCompleted) }</td>
+							<td class="px-6 mono text-xs" style="color:var(--on-surface-variant)">
 								if s.LastSeen.Valid {
 									{ s.LastSeen.Time.Format("2006-01-02 15:04") }
 								} else {
@@ -53,6 +54,7 @@ templ AdminStats(p AdminStatsProps) {
 					}
 				</tbody>
 			</table>
+			</div>
 		</section>
 	}
 }

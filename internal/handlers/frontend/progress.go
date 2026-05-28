@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/progress"
 	"github.com/diamondsacademy/diamonds/internal/quiz"
 	"github.com/diamondsacademy/diamonds/internal/session"
@@ -134,7 +135,8 @@ func (h *Handler) QuizSubmit(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	qs := quiz.Parse(d.QuizJSON)
+	locale := i18n.FromContext(r.Context())
+	qs := quiz.ParseForLocale(d.QuizJSON, d.QuizJSON_EN, d.QuizJSON_BG, locale)
 	correct, total := quiz.Grade(qs, req.Answers)
 
 	// Her sorunun doğru index'i kullanıcıya da geri dönülür (öğrenme amaçlı).
