@@ -12,13 +12,44 @@ function parseVTT(vtt) {
 		if (!p) continue;
 		var lines = p.split('\n');
 		if (lines.length < 2) continue;
-		var timeLine = lines[0];
-		var tMatch = timeLine.match(/([\d:.]+)\s*-->\s*([\d:.]+)/);
-		if (!tMatch) { lines.unshift(''); timeLine = lines[0]; tMatch = timeLine.match(/([\d:.]+)\s*-->\s*([\d:.]+)/); if (!tMatch) continue; }
-		function toSec(s) { var p = s.split(':'); if (p.length === 3) return +p[0]*3600 + +p[1]*60 + parseFloat(p[2]); return +p[0]*60 + parseFloat(p[1]); }
+		var tMatch = lines[0].match(/([\d:.]+)\s*-->\s*([\d:.]+)/);
+		if (!tMatch) continue;
+		function toSec(s) { var p=s.split(':'); if(p.length===3)return +p[0]*3600+ +p[1]*60+parseFloat(p[2]); return +p[0]*60+parseFloat(p[1]); }
 		var start = toSec(tMatch[1]), end = toSec(tMatch[2]);
 		var text = lines.slice(1).join(' ').replace(/<[^>]+>/g, '').trim();
-		if (text) cues.push({ start: start, end: end, text: text });
+		if (!text) continue;
+		// Cumleler -> kucuk satir parcaciklari (max ~80 karakter)
+		var sentences = text.split(/(?<=[.!?])\s+/);
+		var chunks = [];
+		sentences.forEach(function(s) {
+			s = s.trim(); if (!s) return;
+			if (s.length <= 80) { chunks.push(s); return; }
+			// Uzun cumleyi mantikli yerlerden bol: kelime gruplari
+			var words = s.split(' ');
+			var buf = '';
+			for (var w = 0; w < words.length; w++) {
+				if ((buf + ' ' + words[w]).length > 80 && buf) {
+					chunks.push(buf.trim());
+					buf = words[w];
+				} else {
+					buf += (buf ? ' ' : '') + words[w];
+				}
+			}
+			if (buf) chunks.push(buf.trim());
+		});
+		if (chunks.length === 0) continue;
+		// Toplam karakter, orantili dagit
+		var totalLen = 0;
+		chunks.forEach(function(c) { totalLen += c.length; });
+		var cur = start, range = end - start;
+		for (var j = 0; j < chunks.length; j++) {
+			var ratio = chunks[j].length / totalLen;
+			var dur = Math.max(0.5, range * ratio);
+			var e = cur + dur;
+			if (j === chunks.length - 1) e = end;
+			cues.push({ start: cur, end: e, text: chunks[j] });
+			cur = e;
+		}
 	}
 	return cues;
 }
@@ -95,20 +126,44 @@ ready(function() {
 					}, 5000);
 				}
 				// Transcript overlay from DB
-				if (id) {
+				if (id || src) {
+					var vid = id || src;
+					var pc = player.elements.container;
 					var ov = document.createElement('div');
-					ov.style.cssText = 'position:absolute;bottom:56px;left:50%;transform:translateX(-50%);z-index:12;max-width:85%;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,.75);color:#fff;font-size:13px;text-align:center;line-height:1.35;pointer-events:none;font-family:Inter,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.4);overflow:hidden;max-height:2.7em;display:none';
-					el.appendChild(ov);
-					fetch('/subtitles?v=' + id + '&lang=' + locale).then(function(r) { return r.text(); }).then(function(vtt) {
-						var cues = parseVTT(vtt);
-						if (!cues.length) { ov.textContent = 'Altyazı yok'; ov.style.display = 'block'; return; }
-						player.on('timeupdate', function() {
-							var t = player.currentTime || 0, cue = null;
-							for (var i = 0; i < cues.length; i++) { if (t >= cues[i].start && t <= cues[i].end) { cue = cues[i]; break; } }
-							if (cue) { ov.textContent = cue.text; ov.style.display = 'block'; }
-							else { ov.style.display = 'none'; }
-						});
-					}.catch(function() { ov.textContent = 'Altyazı yüklenemedi'; ov.style.display = '-webkit-box'; });
+					ov.style.cssText = 'position:absolute;bottom:56px;left:50%;transform:translateX(-50%);z-index:12;max-width:90%;padding:6px 16px;border-radius:20px;background:rgba(0,0,0,.75);color:#fff;font-size:14px;text-align:center;line-height:1.3;pointer-events:none;font-family:Inter,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none';
+					pc.appendChild(ov);
+					// Language toggle badge
+					var langBadge = document.createElement('div');
+					langBadge.textContent = locale.toUpperCase();
+					langBadge.style.cssText = 'position:absolute;top:8px;right:8px;z-index:13;padding:3px 8px;border-radius:6px;background:rgba(168,85,247,.9);color:#fff;font-size:10px;font-family:Inter,sans-serif;font-weight:700;cursor:pointer;pointer-events:auto';
+					langBadge.title = 'Dil degistir (TR/EN/BG)';
+					pc.appendChild(langBadge);
+					var langs = ['tr', 'en', 'bg'];
+					var curLang = locale;
+					var cues = [];
+					loadCues(curLang);
+					langBadge.addEventListener('click', function() {
+						var idx = langs.indexOf(curLang);
+						curLang = langs[(idx + 1) % langs.length];
+						langBadge.textContent = curLang.toUpperCase();
+						loadCues(curLang);
+					});
+					function loadCues(lang) {
+						var vParam = id || encodeURIComponent(src);
+						fetch('/subtitles?v=' + vParam + '&lang=' + lang)
+							.then(function(r) { return r.text(); })
+							.then(function(vtt) {
+								cues = parseVTT(vtt);
+							}).catch(function() { cues = []; });
+					}
+					player.on('timeupdate', function() {
+						var t = player.currentTime || 0, cue = null;
+						for (var i = 0; i < cues.length; i++) {
+							if (t >= cues[i].start && t <= cues[i].end) { cue = cues[i]; break; }
+						}
+						if (cue) { ov.textContent = cue.text; ov.style.display = 'block'; }
+						else { ov.style.display = 'none'; }
+					});
 				}
 			});
 
