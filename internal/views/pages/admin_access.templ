@@ -24,12 +24,7 @@ templ AdminAccess(p AdminAccessProps) {
 					<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">Kullanıcıların eğitime erişmesi için gereken kodları yönetin</p>
 				</div>
 				<form method="POST" action="/admin/access/generate" class="flex items-center gap-2">
-					<select name="months" class="md3-outlined w-auto py-2 px-3 text-sm" style="min-width:100px">
-						<option value="1">1 Ay</option>
-						<option value="3" selected>3 Ay</option>
-						<option value="6">6 Ay</option>
-						<option value="12">12 Ay</option>
-					</select>
+					<span class="text-xs" style="color:var(--on-surface-variant)">1 ay geçerli</span>
 					<button type="submit" class="btn-filled text-sm py-2 px-5 whitespace-nowrap">+ YENİ KOD</button>
 				</form>
 			</div>

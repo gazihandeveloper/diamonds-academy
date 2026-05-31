@@ -34,15 +34,9 @@ func (h *AccessHandler) AccessList(w http.ResponseWriter, r *http.Request) {
 	render(w, r, pages.AdminAccess(pages.AdminAccessProps{Codes: codes, Flash: flash}))
 }
 
-// AccessGenerate creates a new access code.
+// AccessGenerate creates a new access code (always 3 months, deactivates previous codes).
 func (h *AccessHandler) AccessGenerate(w http.ResponseWriter, r *http.Request) {
-	months := 3
-	if m := r.FormValue("months"); m != "" {
-		if n, err := strconv.Atoi(m); err == nil && n > 0 && n <= 24 {
-			months = n
-		}
-	}
-	code, err := h.AccessSvc.Generate(r.Context(), months)
+	code, err := h.AccessSvc.Generate(r.Context())
 	if err != nil {
 		h.setFlash(r, "Hata: "+err.Error())
 	} else {

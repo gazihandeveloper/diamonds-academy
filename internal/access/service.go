@@ -15,10 +15,10 @@ var (
 )
 
 const (
-	// CodeLength is the length of generated access codes.
-	CodeLength = 12
-	// DefaultExpiryMonths is the default validity period.
-	DefaultExpiryMonths = 3
+	// CodeLength is the length of generated access codes (8-digit numeric).
+	CodeLength = 8
+	// DefaultExpiryMonths is the fixed validity period.
+	DefaultExpiryMonths = 1
 )
 
 // Code represents an access code row.
@@ -40,17 +40,24 @@ func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
 }
 
-// Generate creates a new random access code valid for expiryMonths months.
-func (s *Service) Generate(ctx context.Context, expiryMonths int) (*Code, error) {
-	if expiryMonths <= 0 {
-		expiryMonths = DefaultExpiryMonths
+// Generate creates a new 8-digit numeric access code valid for 3 months.
+// Before generating, it deactivates all existing active codes — only one code
+// can be active at a time.
+func (s *Service) Generate(ctx context.Context) (*Code, error) {
+	// Deactivate all currently active codes first.
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE access_codes SET is_active = 0 WHERE is_active = 1`,
+	)
+	if err != nil {
+		return nil, err
 	}
-	code, err := randomCode(CodeLength)
+
+	code, err := randomNumericCode(CodeLength)
 	if err != nil {
 		return nil, err
 	}
 	now := time.Now().UTC()
-	expires := now.AddDate(0, expiryMonths, 0)
+	expires := now.AddDate(0, DefaultExpiryMonths, 0)
 
 	res, err := s.db.ExecContext(ctx,
 		`INSERT INTO access_codes (code, is_active, created_at, expires_at) VALUES (?, 1, ?, ?)`,
@@ -144,9 +151,9 @@ func (s *Service) Activate(ctx context.Context, id int64) error {
 	return nil
 }
 
-// randomCode generates a cryptographically random alphanumeric string.
-func randomCode(n int) (string, error) {
-	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+// randomNumericCode generates an n-digit cryptographically random numeric code.
+func randomNumericCode(n int) (string, error) {
+	const charset = "0123456789"
 	b := make([]byte, n)
 	for i := range b {
 		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
