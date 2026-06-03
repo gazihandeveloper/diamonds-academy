@@ -19,9 +19,9 @@ type ProfileProps struct {
 
 templ Profile(p ProfileProps) {
 	@layouts.Base(i18n.TC(ctx, "profile.page_title"), p.Theme) {
-		<div class="flex min-h-screen">
+		<div class="flex min-h-dynamic">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
 				<div class="max-w-2xl mx-auto">
 					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-6 md:mb-8">{ i18n.TC(ctx, "profile.title") }</h1>
 

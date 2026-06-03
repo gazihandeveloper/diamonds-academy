@@ -1,0 +1,132 @@
+package pages
+
+import (
+	"github.com/diamondsacademy/diamonds/internal/views/layouts"
+)
+
+type WellbiProps struct {
+	Theme string
+}
+
+templ Wellbi(p WellbiProps) {
+	@layouts.Base("Wellbi", p.Theme) {
+		<div class="min-h-dynamic bg-bg flex flex-col">
+			<!-- Header -->
+			<header class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/5 shrink-0">
+				<a href="/" class="flex items-center gap-3 hover:opacity-80 transition">
+					<svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+						<path d="M19 12H5M12 19l-7-7 7-7"/>
+					</svg>
+					<div class="leading-tight">
+						<div class="text-[10px] tracking-[0.2em] text-brand font-bold">DIAMONDS</div>
+						<div class="text-[9px] tracking-[0.2em] text-white/60">ACADEMY</div>
+					</div>
+				</a>
+				<div class="flex items-center gap-2">
+					<span class="text-2xl">🤖</span>
+					<div>
+						<div class="text-white font-bold text-sm tracking-wider">WELLBI</div>
+						<div class="text-[9px] text-brand tracking-[0.2em] font-semibold">AI ASISTAN</div>
+					</div>
+				</div>
+			</header>
+			<!-- Messages -->
+			<div id="wellbi-messages" class="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4 overscroll-contain">
+				<div class="max-w-3xl mx-auto space-y-4">
+					<div class="flex items-start gap-3">
+						<div class="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center shrink-0 text-sm">🤖</div>
+						<div class="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-3">
+							<p class="text-white/90 text-sm leading-relaxed">Merhaba! Ben Wellbi, size nasıl yardımcı olabilirim? 🤗</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Input -->
+			<div class="shrink-0 border-t border-white/5">
+				<div class="max-w-3xl mx-auto w-full px-4 sm:px-6 py-4">
+					<div class="flex gap-2">
+						<input id="wellbi-input" type="text" placeholder="Mesajınızı yazın..." autocomplete="off" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-brand transition min-h-[44px]" onkeydown="if(event.key==='Enter') sendWellbiMsg()"/>
+						<button onclick="sendWellbiMsg()" class="w-12 h-12 rounded-xl bg-brand hover:bg-brand-light transition flex items-center justify-center shrink-0 min-w-[44px] min-h-[44px]">
+							<svg class="w-5 h-5 text-bg" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+								<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+							</svg>
+						</button>
+					</div>
+					<p class="text-center text-[10px] text-white/30 mt-3 tracking-wide">Bu bilgiler destek amaçlıdır, tıbbi tavsiye niteliği taşımaz. Uzman görüşü almayı ihmal etmeyin.</p>
+				</div>
+			</div>
+		</div>
+		<script>
+			function resizeWellbi() {
+				var msgs = document.getElementById('wellbi-messages');
+				if (msgs && window.visualViewport) {
+					var header = msgs.previousElementSibling;
+					var input = msgs.nextElementSibling;
+					var hh = header ? header.offsetHeight : 0;
+					var ih = input ? input.offsetHeight : 0;
+					msgs.style.height = (window.visualViewport.height - hh - ih) + 'px';
+				}
+			}
+			document.addEventListener('DOMContentLoaded', function() {
+				resizeWellbi();
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', resizeWellbi);
+				}
+				var i = document.getElementById('wellbi-input');
+				if (i) i.addEventListener('focus', function() { setTimeout(resizeWellbi, 300); });
+			});
+			function sendWellbiMsg() {
+				var input = document.getElementById('wellbi-input');
+				var msg = input.value.trim();
+				if (!msg) return;
+				var msgs = document.getElementById('wellbi-messages');
+				var container = msgs.querySelector('.max-w-3xl') || msgs;
+				// User message
+				var userDiv = document.createElement('div');
+				userDiv.className = 'flex items-start gap-3 justify-end';
+				userDiv.innerHTML = '<div class="bg-brand/20 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%]"><p class="text-white text-sm leading-relaxed">'+escapeHTML(msg)+'</p></div><div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center shrink-0 text-sm text-bg font-bold">S</div>';
+				container.appendChild(userDiv);
+				input.disabled = true;
+				input.value = '';
+				msgs.scrollTop = msgs.scrollHeight;
+				// Loading indicator
+				var loadDiv = document.createElement('div');
+				loadDiv.id = 'wellbi-loading';
+				loadDiv.className = 'flex items-start gap-3';
+				loadDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center shrink-0 text-sm">🤖</div><div class="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-3"><p class="text-white/50 text-sm">Yazıyor...</p></div>';
+				container.appendChild(loadDiv);
+				msgs.scrollTop = msgs.scrollHeight;
+				// API call
+				fetch('/api/wellbi/chat', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({message: msg})
+				}).then(function(resp) { return resp.json(); }).then(function(data) {
+					var ld = document.getElementById('wellbi-loading');
+					if (ld) ld.remove();
+					var botDiv = document.createElement('div');
+					botDiv.className = 'flex items-start gap-3';
+					botDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center shrink-0 text-sm">🤖</div><div class="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]"><p class="text-white/90 text-sm leading-relaxed">'+escapeHTML(data.reply || "Bir yanıt alınamadı.")+'</p></div>';
+					container.appendChild(botDiv);
+					msgs.scrollTop = msgs.scrollHeight;
+				}).catch(function() {
+					var ld = document.getElementById('wellbi-loading');
+					if (ld) ld.remove();
+					var errDiv = document.createElement('div');
+					errDiv.className = 'flex items-start gap-3';
+					errDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center shrink-0 text-sm">🤖</div><div class="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]"><p class="text-white/90 text-sm leading-relaxed">Bağlantı hatası oluştu. Lütfen tekrar deneyin.</p></div>';
+					container.appendChild(errDiv);
+					msgs.scrollTop = msgs.scrollHeight;
+				}).finally(function() {
+					input.disabled = false;
+					input.focus();
+				});
+			}
+			function escapeHTML(str) {
+				var div = document.createElement('div');
+				div.appendChild(document.createTextNode(str));
+				return div.innerHTML;
+			}
+		</script>
+	}
+}

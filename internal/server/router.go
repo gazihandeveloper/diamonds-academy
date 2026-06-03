@@ -51,6 +51,7 @@ func NewRouter(d Deps) http.Handler {
 	accessSvc := access.NewService(d.DB)
 	accessH := frontend.NewAccessHandler(d.SM, accessSvc)
 	adminAccessH := adm.NewAccessHandler(d.SM, accessSvc)
+	apiH := api.New(d.DB)
 
 	// Public (auth gerektirmeyen)
 	web.Get("/login", authH.LoginGet)
@@ -100,6 +101,8 @@ func NewRouter(d Deps) http.Handler {
 
 		// Profile and access page are NOT gated (user needs these without code)
 		prot.Get("/profile", front.Profile)
+		prot.Get("/wellbi", front.Wellbi)
+		prot.Post("/api/wellbi/chat", apiH.WellbiChat)
 
 		// Admin: admin rolü zorunlu (implicitly bypasses access gate via middleware)
 		prot.Route("/admin", func(a chi.Router) {
@@ -124,7 +127,6 @@ func NewRouter(d Deps) http.Handler {
 	r.Mount("/", web)
 
 	// REST API (token / session bağımsız iskelet)
-	apiH := api.New(d.DB)
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", apiH.Health)
 	})

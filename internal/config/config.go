@@ -19,6 +19,7 @@ type Config struct {
 	LogLevel        string
 	AdminEmail      string
 	AdminPassword   string
+	DeepSeekAPIKey  string
 }
 
 func Load() (*Config, error) {
@@ -44,6 +45,7 @@ func Load() (*Config, error) {
 		LogLevel:        getenv("LOG_LEVEL", "info"),
 		AdminEmail:      getenv("ADMIN_EMAIL", "admin@diamondsacademy.com"),
 		AdminPassword:   getenv("ADMIN_PASSWORD", "diamondsadmin"),
+		DeepSeekAPIKey:  getenv("DEEPSEEK_API_KEY", ""),
 	}
 
 	if len(cfg.SessionSecret) < 16 {

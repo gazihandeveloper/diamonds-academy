@@ -12,7 +12,7 @@ type AccessProps struct {
 
 templ Access(p AccessProps) {
 	@layouts.Base("Erişim Kodu", p.Code) {
-		<div class="min-h-screen flex items-center justify-center px-4">
+		<div class="min-h-dynamic flex items-center justify-center px-4">
 			<div class="w-full max-w-sm">
 				<div class="flex flex-col items-center mb-10">
 					@layouts.DiamondLogo()

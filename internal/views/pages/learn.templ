@@ -78,7 +78,7 @@ func completedSteps(completed map[string]bool) int {
 templ Learn(p LearnProps) {
 	@layouts.Base(i18n.TC(ctx, "learn.page_title", itoa2(p.Day.DayNo), p.Day.Title), p.Theme) {
 		<div
-			class="min-h-screen bg-bg"
+			class="min-h-dynamic bg-bg"
 			data-day-no={ itoa(p.Day.DayNo) }
 			data-active-tab={ p.ActiveTab }
 			data-user-email={ p.UserEmail }

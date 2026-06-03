@@ -7,7 +7,7 @@ templ Base(title, theme string) {
 	<html lang={ i18n.FromContext(ctx) } data-theme={ theme }>
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			<title>{ title }</title>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
@@ -28,6 +28,12 @@ templ Base(title, theme string) {
 			</script>
 			<style>
 				body { font-family: 'Inter', sans-serif; background: #0a0a0a; }
+				*,*::after,*::before { -webkit-tap-highlight-color: transparent; }
+				.h-dynamic { height: 100vh; height: 100dvh; }
+				.min-h-dynamic { min-height: 100vh; min-height: 100dvh; }
+				.fixed-bottom-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+				.fixed-top-safe { padding-top: env(safe-area-inset-top, 0px); }
+
 				.day-btn { transition: all 0.2s ease; }
 				.day-btn:hover { border-color: #a855f7; color: #c084fc; }
 				.day-btn.active { background: #a855f7; color: #0a0a0a; border-color: #a855f7; }
@@ -58,7 +64,7 @@ templ Base(title, theme string) {
 				.plyr { border-radius: 1rem; overflow: hidden; box-shadow: 0 0 40px rgba(168,85,247,.15); }
 			</style>
 		</head>
-		<body class="text-white min-h-screen">
+		<body class="text-white min-h-dynamic">
 			{ children... }
 			<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 			<script src="/static/js/diamonds-flow.js"></script>

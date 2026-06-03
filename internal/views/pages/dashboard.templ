@@ -29,9 +29,9 @@ func dayUnlocked(day int, completedQuizzes map[int]bool) bool {
 
 templ Dashboard(p DashboardProps) {
 	@layouts.Base(i18n.TC(ctx, "dashboard.page_title", itoa2(p.CurrentDay)), p.Theme) {
-		<div class="flex min-h-screen">
+		<div class="flex min-h-dynamic">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
 				<div class="flex items-start gap-2 md:gap-4 mb-6 md:mb-12 flex-wrap">
 					<div class="flex-1 border border-white/10 rounded-2xl p-3 md:p-4 bg-bg-panel/50 min-w-0 max-w-full">
 						<div class="flex flex-wrap items-center gap-1 md:gap-1.5 max-w-full">
@@ -95,9 +95,9 @@ templ Dashboard(p DashboardProps) {
 
 templ DashboardEmpty(sb components.SidebarProps, theme string) {
 	@layouts.Base(i18n.TC(ctx, "dashboard.page_title"), theme) {
-		<div class="flex min-h-screen">
+		<div class="flex min-h-dynamic">
 			@components.Sidebar(sb)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 mt-14 md:mt-0 flex items-center justify-center">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 flex items-center justify-center">
 				<div class="card-glow rounded-3xl p-6 md:p-12 border border-white/5 max-w-xl text-center">
 					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-4">{ i18n.TC(ctx, "dashboard.empty_title") }</h1>
 		<p class="text-white/70 mb-6 text-sm md:text-base">{ i18n.TC(ctx, "dashboard.empty_desc") }</p>

@@ -416,12 +416,12 @@ templ AdminBase(title, active string) {
 			</style>
 			<script src="/static/js/quiz-builder.js" defer></script>
 		</head>
-		<body class="min-h-screen overflow-x-hidden">
-			<div class="flex min-h-screen">
+		<body class="min-h-dynamic overflow-x-hidden">
+			<div class="flex min-h-dynamic">
 				<!-- Mobile overlay -->
 				<div id="admin-overlay" class="fixed inset-0 z-40 bg-black/50 hidden md:hidden" onclick="toggleAdminSidebar()"></div>
 				<!-- Sidebar -->
-				<aside id="admin-sidebar" class="w-56 fixed h-screen nav-rail flex flex-col border-r z-50 transition-transform duration-300 -translate-x-full md:translate-x-0" style="border-color:var(--outline-variant)">
+				<aside id="admin-sidebar" class="w-56 fixed top-0 bottom-0 nav-rail flex flex-col border-r z-50 transition-transform duration-300 -translate-x-full md:translate-x-0" style="border-color:var(--outline-variant)">
 					<div class="flex items-center justify-between px-5 py-5 border-b md:border-b-0" style="border-color:var(--outline-variant)">
 						<div class="flex items-center gap-3">
 							<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--primary-container);color:var(--on-primary-container)">

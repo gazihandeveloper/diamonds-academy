@@ -239,3 +239,7 @@ func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
 		SlotsCompleted: slotsCompleted,
 	}))
 }
+
+func (h *Handler) Wellbi(w http.ResponseWriter, r *http.Request) {
+	render(w, r, pages.Wellbi(pages.WellbiProps{}))
+}
