@@ -24,12 +24,13 @@ const (
 )
 
 type User struct {
-	ID        int64
-	Email     string
-	Name      string
-	Phone     string
-	Role      Role
-	CreatedAt time.Time
+	ID                int64
+	Email             string
+	Name              string
+	Phone             string
+	Role              Role
+	CreatedAt         time.Time
+	MustChangePassword bool
 }
 
 type Service struct {
@@ -70,11 +71,11 @@ func (s *Service) Register(ctx context.Context, email, name, phone, password str
 func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
 	email = normalizeEmail(email)
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, email, name, phone, password_hash, role, created_at FROM users WHERE email = ?`, email)
+		`SELECT id, email, name, phone, password_hash, role, created_at, must_change_password FROM users WHERE email = ?`, email)
 
 	var u User
 	var hash string
-	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &hash, &u.Role, &u.CreatedAt); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &hash, &u.Role, &u.CreatedAt, &u.MustChangePassword); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrInvalidCredentials
 		}
@@ -86,11 +87,61 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 	return &u, nil
 }
 
+func (s *Service) ResetPassword(ctx context.Context, email string) error {
+	email = normalizeEmail(email)
+	if email == "" {
+		return errors.New("email is required")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte("diamonds1234"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = CURRENT_TIMESTAMP WHERE email = ?`,
+		string(hash), email,
+	)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+func (s *Service) SetPassword(ctx context.Context, userID int64, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx,
+		`UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		string(hash), userID,
+	)
+	return err
+}
+
+func (s *Service) MustChangePassword(ctx context.Context, userID int64) (bool, error) {
+	var mcp int
+	err := s.db.QueryRowContext(ctx, `SELECT must_change_password FROM users WHERE id = ?`, userID).Scan(&mcp)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, ErrUserNotFound
+		}
+		return false, err
+	}
+	return mcp == 1, nil
+}
+
 func (s *Service) GetByID(ctx context.Context, id int64) (*User, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?`, id)
+		`SELECT id, email, name, phone, role, created_at, must_change_password FROM users WHERE id = ?`, id)
 	var u User
-	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.Role, &u.CreatedAt); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.Role, &u.CreatedAt, &u.MustChangePassword); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}

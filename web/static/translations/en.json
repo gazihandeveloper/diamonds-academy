@@ -6,6 +6,7 @@
   "login.button": "Sign In",
   "login.not_member": "Not a member? Register →",
   "login.home": "← Home",
+  "login.forgot_password": "Forgot Password",
   "register.page_title": "Register — Diamonds Academy",
   "register.title": "Register",
   "register.description": "Register to follow the 21-chapter program.",
@@ -74,5 +75,18 @@
   "profile.upload": "Upload",
   "profile.progress": "Progress",
   "profile.days_completed": "Chapters Completed",
-  "profile.slots_completed": "Lessons Completed"
+  "profile.slots_completed": "Lessons Completed",
+  "login.forgot_password": "Forgot Password",
+  "forgot_password.page_title": "Reset Password — Diamonds Academy",
+  "forgot_password.title": "Forgot Password",
+  "forgot_password.description": "Enter your email address and your password will be reset.",
+  "forgot_password.email": "Email",
+  "forgot_password.button": "Reset Password",
+  "forgot_password.back": "← Sign In",
+  "change_password.page_title": "Change Password — Diamonds Academy",
+  "change_password.title": "Change Password",
+  "change_password.description": "You logged in with a default password. Please set a new password.",
+  "change_password.new_password": "New Password",
+  "change_password.confirm": "New Password (Confirm)",
+  "change_password.button": "Save Password"
 }

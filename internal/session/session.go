@@ -15,7 +15,8 @@ const (
 	KeyEmail          = "email"
 	KeyAccessGranted  = "access_granted"
 	KeyAccessAttempts = "access_attempts"
-	KeyTheme          = "theme"
+	KeyMustChangePassword = "must_change_password"
+	KeyTheme              = "theme"
 	KeyLocale         = "locale"
 	KeyFlash          = "flash"
 )

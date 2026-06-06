@@ -6,6 +6,7 @@
   "login.button": "Вход",
   "login.not_member": "Нямате акаунт? Регистрация →",
   "login.home": "← Начало",
+  "login.forgot_password": "Забравена парола",
   "register.page_title": "Регистрация — Diamonds Academy",
   "register.title": "Регистрация",
   "register.description": "Регистрирайте се, за да следвате 21-седмичната програма.",
@@ -74,5 +75,18 @@
   "profile.upload": "Качи",
   "profile.progress": "Напредък",
   "profile.days_completed": "Завършени уроци",
-  "profile.slots_completed": "Завършени занятия"
+  "profile.slots_completed": "Завършени занятия",
+  "login.forgot_password": "Забравена парола",
+  "forgot_password.page_title": "Нулиране на парола — Diamonds Academy",
+  "forgot_password.title": "Забравена парола",
+  "forgot_password.description": "Въведете имейл адреса си и паролата ви ще бъде нулирана.",
+  "forgot_password.email": "Имейл",
+  "forgot_password.button": "Нулиране на парола",
+  "forgot_password.back": "← Вход",
+  "change_password.page_title": "Смяна на парола — Diamonds Academy",
+  "change_password.title": "Смяна на парола",
+  "change_password.description": "Влязохте с парола по подразбиране. Моля, задайте нова парола.",
+  "change_password.new_password": "Нова парола",
+  "change_password.confirm": "Нова парола (Потвърждение)",
+  "change_password.button": "Запазване на парола"
 }

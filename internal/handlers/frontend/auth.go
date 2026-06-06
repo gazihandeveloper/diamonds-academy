@@ -55,6 +55,12 @@ func (h *AuthHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
 	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
+	h.SM.Put(r.Context(), session.KeyMustChangePassword, u.MustChangePassword)
+
+	if u.MustChangePassword {
+		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
+		return
+	}
 
 	dest := "/"
 	if u.Role == auth.RoleAdmin {
@@ -129,5 +135,84 @@ func (h *AuthHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
 	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
+	h.SM.Put(r.Context(), session.KeyMustChangePassword, u.MustChangePassword)
+
+	if u.MustChangePassword {
+		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h *AuthHandler) ForgotPasswordGet(w http.ResponseWriter, r *http.Request) {
+	if h.SM.GetInt64(r.Context(), session.KeyUserID) != 0 {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{}))
+}
+
+func (h *AuthHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	email := r.FormValue("email")
+
+	err := h.Auth.ResetPassword(r.Context(), email)
+	if err != nil {
+		if errors.Is(err, auth.ErrUserNotFound) {
+			// Don't reveal whether the email exists
+			msg := "Bu e-posta adresi ile ilgili bir işlem yapılamadı."
+			render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Email: email, Error: msg}))
+			return
+		}
+		render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Email: email, Error: "Beklenmeyen bir hata oluştu."}))
+		return
+	}
+
+	render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Success: "Şifreniz sıfırlandı. Varsayılan şifre ile giriş yapabilirsiniz."}))
+}
+
+func (h *AuthHandler) ChangePasswordGet(w http.ResponseWriter, r *http.Request) {
+	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
+	if uid == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	render(w, r, pages.ChangePassword(pages.ChangePasswordProps{}))
+}
+
+func (h *AuthHandler) ChangePasswordPost(w http.ResponseWriter, r *http.Request) {
+	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
+	if uid == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	password := r.FormValue("password")
+	confirm := r.FormValue("password_confirm")
+
+	if len(password) < 6 {
+		render(w, r, pages.ChangePassword(pages.ChangePasswordProps{Error: "Şifre en az 6 karakter olmalı."}))
+		return
+	}
+	if password != confirm {
+		render(w, r, pages.ChangePassword(pages.ChangePasswordProps{Error: "Şifreler eşleşmiyor."}))
+		return
+	}
+
+	if err := h.Auth.SetPassword(r.Context(), uid, password); err != nil {
+		render(w, r, pages.ChangePassword(pages.ChangePasswordProps{Error: "Şifre değiştirilemedi."}))
+		return
+	}
+
+	h.SM.Put(r.Context(), session.KeyMustChangePassword, false)
+	render(w, r, pages.ChangePassword(pages.ChangePasswordProps{Success: "Şifreniz başarıyla değiştirildi. Yönlendiriliyorsunuz..."}))
 }

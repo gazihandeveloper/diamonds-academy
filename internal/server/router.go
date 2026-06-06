@@ -18,7 +18,6 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/handlers/frontend"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
 	mw "github.com/diamondsacademy/diamonds/internal/middleware"
-	"github.com/diamondsacademy/diamonds/internal/session"
 )
 
 type Deps struct {
@@ -59,24 +58,8 @@ func NewRouter(d Deps) http.Handler {
 	web.Post("/logout", authH.Logout)
 	web.Get("/register", authH.RegisterGet)
 	web.Post("/register", authH.RegisterPost)
-	web.Post("/api/locale", func(w http.ResponseWriter, r *http.Request) {
-		locale := r.FormValue("locale")
-		if locale == "tr" || locale == "en" || locale == "bg" {
-			d.SM.Put(r.Context(), session.KeyLocale, locale)
-		}
-		ref := safeReferer(r)
-		http.Redirect(w, r, ref, http.StatusSeeOther)
-	})
-	web.Post("/api/theme", func(w http.ResponseWriter, r *http.Request) {
-		cur := d.SM.GetString(r.Context(), session.KeyTheme)
-		if cur == "light" {
-			d.SM.Put(r.Context(), session.KeyTheme, "dark")
-		} else {
-			d.SM.Put(r.Context(), session.KeyTheme, "light")
-		}
-		ref := safeReferer(r)
-		http.Redirect(w, r, ref, http.StatusSeeOther)
-	})
+	web.Get("/forgot-password", authH.ForgotPasswordGet)
+	web.Post("/forgot-password", authH.ForgotPasswordPost)
 
 	// Protected: kullanıcı girişi zorunlu
 	web.Group(func(prot chi.Router) {
@@ -99,8 +82,10 @@ func NewRouter(d Deps) http.Handler {
 			gated.Post("/api/quiz-submit", front.QuizSubmit)
 		})
 
-		// Profile and access page are NOT gated (user needs these without code)
+		// Profile, change-password and access page are NOT gated (user needs these without code)
 		prot.Get("/profile", front.Profile)
+		prot.Get("/change-password", authH.ChangePasswordGet)
+		prot.Post("/change-password", authH.ChangePasswordPost)
 		prot.Get("/wellbi", front.Wellbi)
 		prot.Post("/api/wellbi/chat", apiH.WellbiChat)
 

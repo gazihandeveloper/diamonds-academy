@@ -6,6 +6,7 @@
   "login.button": "Giriş Yap",
   "login.not_member": "Üye değil misin? Kayıt ol →",
   "login.home": "← Ana sayfa",
+  "login.forgot_password": "Şifremi Unuttum",
   "register.page_title": "Üye Ol — Diamonds Academy",
   "register.title": "Üye Ol",
   "register.description": "Kayıt olarak 21 bölümlük programı takip edebilirsin.",
@@ -74,5 +75,18 @@
   "profile.upload": "Yükle",
   "profile.progress": "İlerleme",
   "profile.days_completed": "Tamamlanan Bölüm",
-  "profile.slots_completed": "Tamamlanan Ders"
+  "profile.slots_completed": "Tamamlanan Ders",
+  "login.forgot_password": "Şifremi Unuttum",
+  "forgot_password.page_title": "Şifre Sıfırla — Diamonds Academy",
+  "forgot_password.title": "Şifremi Unuttum",
+  "forgot_password.description": "E-posta adresinizi girin, şifreniz sıfırlanacaktır.",
+  "forgot_password.email": "E-posta",
+  "forgot_password.button": "Şifremi Sıfırla",
+  "forgot_password.back": "← Giriş Yap",
+  "change_password.page_title": "Şifre Değiştir — Diamonds Academy",
+  "change_password.title": "Şifre Değiştir",
+  "change_password.description": "Varsayılan şifre ile giriş yaptınız. Lütfen yeni şifrenizi belirleyin.",
+  "change_password.new_password": "Yeni Şifre",
+  "change_password.confirm": "Yeni Şifre (Tekrar)",
+  "change_password.button": "Şifreyi Kaydet"
 }
