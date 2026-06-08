@@ -2,10 +2,8 @@ package access
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"errors"
-	"math/big"
 	"time"
 )
 
@@ -15,9 +13,7 @@ var (
 )
 
 const (
-	// CodeLength is the length of generated access codes (8-digit numeric).
-	CodeLength = 8
-	// DefaultExpiryMonths is the fixed validity period.
+	// DefaultExpiryMonths is the fixed validity period for manually created codes.
 	DefaultExpiryMonths = 1
 )
 
@@ -38,36 +34,6 @@ type Service struct {
 // NewService creates a new access code service.
 func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
-}
-
-// Generate creates a new 8-digit numeric access code valid for 3 months.
-// Before generating, it deactivates all existing active codes — only one code
-// can be active at a time.
-func (s *Service) Generate(ctx context.Context) (*Code, error) {
-	// Deactivate all currently active codes first.
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE access_codes SET is_active = 0 WHERE is_active = 1`,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	code, err := randomNumericCode(CodeLength)
-	if err != nil {
-		return nil, err
-	}
-	now := time.Now().UTC()
-	expires := now.AddDate(0, DefaultExpiryMonths, 0)
-
-	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO access_codes (code, is_active, created_at, expires_at) VALUES (?, 1, ?, ?)`,
-		code, now, expires,
-	)
-	if err != nil {
-		return nil, err
-	}
-	id, _ := res.LastInsertId()
-	return &Code{ID: id, Code: code, IsActive: true, CreatedAt: now, ExpiresAt: expires}, nil
 }
 
 // Validate checks if a code exists, is active, and not expired.
@@ -151,16 +117,29 @@ func (s *Service) Activate(ctx context.Context, id int64) error {
 	return nil
 }
 
-// randomNumericCode generates an n-digit cryptographically random numeric code.
-func randomNumericCode(n int) (string, error) {
-	const charset = "0123456789"
-	b := make([]byte, n)
-	for i := range b {
-		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[idx.Int64()]
+// SetCustomCode allows a user to set their own access code manually.
+// Deactivates all other active codes first, then creates this one.
+func (s *Service) SetCustomCode(ctx context.Context, code string) (*Code, error) {
+	if len(code) < 4 {
+		return nil, errors.New("code must be at least 4 characters")
 	}
-	return string(b), nil
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE access_codes SET is_active = 0 WHERE is_active = 1`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	expires := now.AddDate(0, DefaultExpiryMonths, 0)
+	res, err := s.db.ExecContext(ctx,
+		`INSERT INTO access_codes (code, is_active, created_at, expires_at) VALUES (?, 1, ?, ?)`,
+		code, now, expires,
+	)
+	if err != nil {
+		return nil, err
+	}
+	id, _ := res.LastInsertId()
+	return &Code{ID: id, Code: code, IsActive: true, CreatedAt: now, ExpiresAt: expires}, nil
 }
+
+

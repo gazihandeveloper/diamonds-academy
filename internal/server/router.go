@@ -103,7 +103,7 @@ func NewRouter(d Deps) http.Handler {
 			a.Post("/days/fetch-transcript", adminH.FetchTranscript)
 			// Access code management
 			a.Get("/access", adminAccessH.AccessList)
-			a.Post("/access/generate", adminAccessH.AccessGenerate)
+			a.Post("/access/custom", adminAccessH.AccessCustom)
 			a.Post("/access/{id}/deactivate", adminAccessH.AccessDeactivate)
 			a.Post("/access/{id}/activate", adminAccessH.AccessActivate)
 		})

@@ -11,10 +11,9 @@ type AdminProps struct {
 
 templ Admin(p AdminProps) {
 	@layouts.AdminBase("Genel Bakış", "overview") {
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			@statCard("KULLANICILAR", itoa2(len(p.Users)), "toplam kayıtlı")
 			@statCard("AKTİF EĞİTİM",    "03",                "21 eğitim programı")
-			@statCard("OTURUM",       "—",                 "canlı")
 		</div>
 
 		<section class="md3-card overflow-hidden">

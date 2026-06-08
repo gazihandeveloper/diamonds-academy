@@ -56,85 +56,118 @@ func insertCode(t *testing.T, db *sql.DB, code string, active bool, createdAt, e
 	return id
 }
 
-// ─── Generate ───────────────────────────────────────────────────────────────
+// ─── SetCustomCode ───────────────────────────────────────────────────────────
 
-func TestGenerate_Happy(t *testing.T) {
+func TestSetCustomCode_Happy(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, err := svc.Generate(ctx, 3)
+	code, err := svc.SetCustomCode(ctx, "MANUEL-KOD")
 	if err != nil {
-		t.Fatalf("Generate() error = %v", err)
+		t.Fatalf("SetCustomCode() error = %v", err)
 	}
-	if len(code.Code) != CodeLength {
-		t.Errorf("code length = %d, want %d", len(code.Code), CodeLength)
+	if code.Code != "MANUEL-KOD" {
+		t.Errorf("code = %q, want %q", code.Code, "MANUEL-KOD")
 	}
 	if !code.IsActive {
 		t.Error("new code should be active")
 	}
-	// Expiry should be approximately 3 months from now.
-	want := time.Now().UTC().AddDate(0, 3, 0)
-	if delta := code.ExpiresAt.Sub(want); delta < 0 {
-		delta = -delta
-	}
-	// Allow 5 seconds tolerance for test execution time.
+	want := time.Now().UTC().AddDate(0, DefaultExpiryMonths, 0)
 	if code.ExpiresAt.Before(want.Add(-5*time.Second)) || code.ExpiresAt.After(want.Add(5*time.Second)) {
 		t.Errorf("expires_at = %v, want ~%v", code.ExpiresAt, want)
 	}
 }
 
-func TestGenerate_ZeroMonthsDefaults(t *testing.T) {
+func TestSetCustomCode_TooShort(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, err := svc.Generate(ctx, 0)
-	if err != nil {
-		t.Fatalf("Generate(0) error = %v", err)
-	}
-	want := time.Now().UTC().AddDate(0, DefaultExpiryMonths, 0)
-	if code.ExpiresAt.Before(want.Add(-5*time.Second)) || code.ExpiresAt.After(want.Add(5*time.Second)) {
-		t.Errorf("expires_at = %v, want ~%v (default %d months)", code.ExpiresAt, want, DefaultExpiryMonths)
+	_, err := svc.SetCustomCode(ctx, "ABC")
+	if err == nil {
+		t.Error("expected error for code shorter than 4 chars")
 	}
 }
 
-func TestGenerate_NegativeMonthsDefaults(t *testing.T) {
+func TestSetCustomCode_MinLength(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, err := svc.Generate(ctx, -5)
+	code, err := svc.SetCustomCode(ctx, "ABCD")
 	if err != nil {
-		t.Fatalf("Generate(-5) error = %v", err)
-	}
-	want := time.Now().UTC().AddDate(0, DefaultExpiryMonths, 0)
-	if code.ExpiresAt.Before(want.Add(-5*time.Second)) || code.ExpiresAt.After(want.Add(5*time.Second)) {
-		t.Errorf("expires_at = %v, want ~%v (default %d months)", code.ExpiresAt, want, DefaultExpiryMonths)
-	}
-}
-
-func TestGenerate_LargeMonths(t *testing.T) {
-	db := setupTestDB(t)
-	defer db.Close()
-	svc := NewService(db)
-	ctx := context.Background()
-
-	// Boundary: very large expiry (e.g. 100 years).
-	code, err := svc.Generate(ctx, 1200)
-	if err != nil {
-		t.Fatalf("Generate(1200) error = %v", err)
+		t.Fatalf("SetCustomCode with 4-char code error = %v", err)
 	}
 	if !code.IsActive {
-		t.Error("code should be active")
+		t.Error("4-char code should be active")
 	}
-	// Expiry should be roughly 100 years from now — allow generous tolerance.
-	minExpiry := time.Now().UTC().AddDate(99, 0, 0)
-	if code.ExpiresAt.Before(minExpiry) {
-		t.Errorf("expires_at %v should be at least 99 years in the future", code.ExpiresAt)
+}
+
+func TestSetCustomCode_DeactivatesPrevious(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+	ctx := context.Background()
+
+	c1, err := svc.SetCustomCode(ctx, "ESKI-KOD")
+	if err != nil {
+		t.Fatalf("first SetCustomCode: %v", err)
+	}
+
+	c2, err := svc.SetCustomCode(ctx, "YENI-KOD")
+	if err != nil {
+		t.Fatalf("second SetCustomCode: %v", err)
+	}
+
+	// First code should now be inactive.
+	codes, err := svc.List(ctx)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	for _, c := range codes {
+		if c.ID == c1.ID && c.IsActive {
+			t.Error("old code should be deactivated after creating new one")
+		}
+		if c.ID == c2.ID && !c.IsActive {
+			t.Error("new code should be active")
+		}
+	}
+}
+
+func TestSetCustomCode_DuplicateCode(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+	ctx := context.Background()
+
+	_, err := svc.SetCustomCode(ctx, "SAME-CODE")
+	if err != nil {
+		t.Fatalf("first insert: %v", err)
+	}
+	// Second insert with same code should fail (UNIQUE constraint).
+	_, err = svc.SetCustomCode(ctx, "SAME-CODE")
+	if err == nil {
+		t.Error("expected error for duplicate code")
+	}
+}
+
+func TestSetCustomCode_VeryLong(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+	ctx := context.Background()
+
+	longCode := strings.Repeat("X", 200)
+	code, err := svc.SetCustomCode(ctx, longCode)
+	if err != nil {
+		t.Fatalf("SetCustomCode long code error = %v", err)
+	}
+	if code.Code != longCode {
+		t.Errorf("code mismatch for long code")
 	}
 }
 
@@ -146,9 +179,9 @@ func TestValidate_Happy(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	generated, err := svc.Generate(ctx, 3)
+	generated, err := svc.SetCustomCode(ctx, "VALIDATE-ME")
 	if err != nil {
-		t.Fatalf("setup generate: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 
 	got, err := svc.Validate(ctx, generated.Code)
@@ -196,9 +229,9 @@ func TestValidate_DeactivatedCode(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	generated, err := svc.Generate(ctx, 3)
+	generated, err := svc.SetCustomCode(ctx, "GOING-DOWN")
 	if err != nil {
-		t.Fatalf("generate: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	if err := svc.Deactivate(ctx, generated.ID); err != nil {
 		t.Fatalf("deactivate: %v", err)
@@ -343,12 +376,12 @@ func TestList_MultipleOrdered(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// Generate codes with small delays so created_at differs.
-	svc.Generate(ctx, 1)
+	// Insert codes with small delays so created_at differs.
+	svc.SetCustomCode(ctx, "LIST-1")
 	time.Sleep(10 * time.Millisecond)
-	svc.Generate(ctx, 3)
+	svc.SetCustomCode(ctx, "LIST-2")
 	time.Sleep(10 * time.Millisecond)
-	svc.Generate(ctx, 6)
+	svc.SetCustomCode(ctx, "LIST-3")
 
 	codes, err := svc.List(ctx)
 	if err != nil {
@@ -372,8 +405,8 @@ func TestList_MixedActiveDeactivated(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	c1, _ := svc.Generate(ctx, 3)
-	c2, _ := svc.Generate(ctx, 3)
+	c1, _ := svc.SetCustomCode(ctx, "MIXED-1")
+	c2, _ := svc.SetCustomCode(ctx, "MIXED-2")
 	svc.Deactivate(ctx, c1.ID) // deactivate first
 
 	codes, err := svc.List(ctx)
@@ -400,9 +433,9 @@ func TestDeactivate_Happy(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, err := svc.Generate(ctx, 3)
+	code, err := svc.SetCustomCode(ctx, "DEACT-ME")
 	if err != nil {
-		t.Fatalf("generate: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	if err := svc.Deactivate(ctx, code.ID); err != nil {
 		t.Fatalf("Deactivate() error = %v", err)
@@ -432,7 +465,7 @@ func TestDeactivate_AlreadyDeactivated(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, _ := svc.Generate(ctx, 3)
+	code, _ := svc.SetCustomCode(ctx, "DEACT-2X")
 	svc.Deactivate(ctx, code.ID)
 
 	// Second deactivation should return ErrCodeNotFound.
@@ -474,7 +507,7 @@ func TestActivate_Happy(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, _ := svc.Generate(ctx, 3)
+	code, _ := svc.SetCustomCode(ctx, "ACTIVATE-ME")
 	svc.Deactivate(ctx, code.ID)
 
 	if err := svc.Activate(ctx, code.ID); err != nil {
@@ -508,7 +541,7 @@ func TestActivate_AlreadyActive(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	code, _ := svc.Generate(ctx, 3)
+	code, _ := svc.SetCustomCode(ctx, "ALREADY-ON")
 	// Already active — Activate should return ErrCodeNotFound.
 	err := svc.Activate(ctx, code.ID)
 	if err != ErrCodeNotFound {
@@ -583,10 +616,10 @@ func TestFullLifecycle(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// 1. Generate.
-	code, err := svc.Generate(ctx, 3)
+	// 1. Create custom code.
+	code, err := svc.SetCustomCode(ctx, "LIFECYCLE")
 	if err != nil {
-		t.Fatalf("generate: %v", err)
+		t.Fatalf("SetCustomCode: %v", err)
 	}
 
 	// 2. Validate — pass.

@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/diamondsacademy/diamonds/internal/access"
@@ -34,13 +35,24 @@ func (h *AccessHandler) AccessList(w http.ResponseWriter, r *http.Request) {
 	render(w, r, pages.AdminAccess(pages.AdminAccessProps{Codes: codes, Flash: flash}))
 }
 
-// AccessGenerate creates a new access code (always 3 months, deactivates previous codes).
-func (h *AccessHandler) AccessGenerate(w http.ResponseWriter, r *http.Request) {
-	code, err := h.AccessSvc.Generate(r.Context())
+// AccessCustom creates an access code with a user-specified code.
+func (h *AccessHandler) AccessCustom(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.setFlash(r, "Hata: geçersiz form")
+		http.Redirect(w, r, "/admin/access", http.StatusSeeOther)
+		return
+	}
+	code := strings.TrimSpace(r.FormValue("code"))
+	if len(code) < 4 {
+		h.setFlash(r, "Kod en az 4 karakter olmalıdır.")
+		http.Redirect(w, r, "/admin/access", http.StatusSeeOther)
+		return
+	}
+	_, err := h.AccessSvc.SetCustomCode(r.Context(), code)
 	if err != nil {
 		h.setFlash(r, "Hata: "+err.Error())
 	} else {
-		h.setFlash(r, "Erişim kodu oluşturuldu: "+code.Code)
+		h.setFlash(r, "Erişim kodu oluşturuldu: "+code)
 	}
 	http.Redirect(w, r, "/admin/access", http.StatusSeeOther)
 }

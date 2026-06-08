@@ -18,14 +18,14 @@ templ AdminAccess(p AdminAccessProps) {
 			</div>
 		}
 		<div class="md3-card overflow-hidden">
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
 				<div>
 					<h2 class="text-base font-semibold" style="color:var(--on-surface)">Erişim Kodları</h2>
 					<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">Kullanıcıların eğitime erişmesi için gereken kodları yönetin</p>
 				</div>
-				<form method="POST" action="/admin/access/generate" class="flex items-center gap-2">
-					<span class="text-xs" style="color:var(--on-surface-variant)">1 ay geçerli</span>
-					<button type="submit" class="btn-filled text-sm py-2 px-5 whitespace-nowrap">+ YENİ KOD</button>
+				<form method="POST" action="/admin/access/custom" class="flex items-center gap-2">
+					<input type="text" name="code" placeholder="Kendi kodunu gir" required minlength="4" maxlength="32" class="input text-sm px-3 py-2" style="background:var(--surface-variant);color:var(--on-surface);border:1px solid var(--outline);border-radius:8px;width:auto;max-width:160px;">
+					<button type="submit" class="btn-filled text-sm py-2 px-5 whitespace-nowrap">KOD EKLE</button>
 				</form>
 			</div>
 			<div class="overflow-x-auto">
