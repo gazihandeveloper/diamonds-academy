@@ -37,6 +37,13 @@ type deepseekChoice struct {
 
 type deepseekResponse struct {
 	Choices []deepseekChoice `json:"choices"`
+	Usage   deepseekUsage    `json:"usage"`
+}
+
+type deepseekUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
 }
 
 func (h *Handler) WellbiChat(w http.ResponseWriter, r *http.Request) {
@@ -110,5 +117,17 @@ func (h *Handler) WellbiChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reply := strings.TrimSpace(dsResp.Choices[0].Message.Content)
+
+	// Kullanım kaydet
+	if h.DB != nil {
+		uid := int64(0)
+		if h.SM != nil {
+			uid = h.SM.GetInt64(r.Context(), "userID")
+		}
+		_, _ = h.DB.ExecContext(r.Context(),
+			`INSERT INTO deepseek_usage (user_id, prompt_tokens, completion_tokens, total_tokens) VALUES (?, ?, ?, ?)`,
+			uid, dsResp.Usage.PromptTokens, dsResp.Usage.CompletionTokens, dsResp.Usage.TotalTokens)
+	}
+
 	writeJSON(w, http.StatusOK, wellbiResponse{Reply: reply})
 }

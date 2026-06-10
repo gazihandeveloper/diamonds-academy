@@ -118,8 +118,13 @@
       });
 
       if (fb) {
-        fb.textContent = data.correct + ' / ' + data.total + (data.passed ? ' — Tebrikler! Eğitim tamamlandı.' : ' — Tüm soruları doğru yapmalısın.');
-        fb.className = 'text-sm mono ' + (data.passed ? 'text-green-400' : 'text-yellow-400');
+        if (data.passed) {
+          fb.textContent = data.correct + ' / ' + data.total + ' — Tebrikler! Geçtiniz.';
+          fb.className = 'text-sm mono text-green-400';
+        } else {
+          fb.textContent = data.correct + ' / ' + data.total + ' — Başarısız! %70 gerekli. Önceki 3 videoyu tekrar izlemelisin.';
+          fb.className = 'text-sm mono text-red-400';
+        }
       }
 
       if (data.passed) {

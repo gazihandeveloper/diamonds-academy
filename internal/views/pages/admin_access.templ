@@ -12,75 +12,64 @@ type AdminAccessProps struct {
 
 templ AdminAccess(p AdminAccessProps) {
 	@layouts.AdminBase("Erişim Kodları", "access") {
-		if p.Flash != "" {
-			<div class="md3-card p-4" style="background:var(--primary-container);color:var(--on-primary-container)">
-				<p class="text-sm font-medium">{ p.Flash }</p>
-			</div>
-		}
-		<div class="md3-card overflow-hidden">
-				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
-				<div>
-					<h2 class="text-base font-semibold" style="color:var(--on-surface)">Erişim Kodları</h2>
-					<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">Kullanıcıların eğitime erişmesi için gereken kodları yönetin</p>
+		<main class="p-4 md:p-6 pt-16 md:pt-6">
+			if p.Flash != "" {
+				<div class="cs-alert cs-alert-success mb-4">{ p.Flash }</div>
+			}
+
+			<div class="cs-card">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-200">
+					<div>
+						<h2 class="text-sm font-semibold text-gray-900">Erişim Kodları</h2>
+						<p class="text-xs text-gray-500 mt-0.5">Kullanıcıların eğitime erişmesi için gereken kodları yönetin</p>
+					</div>
+					<form method="POST" action="/admin/access/custom" class="flex items-center gap-2">
+						<input type="text" name="code" placeholder="Kod gir" required minlength="4" maxlength="32"
+							class="cs-input w-32 md:w-40 text-sm"/>
+						<button type="submit" class="cs-btn-primary text-sm">KOD EKLE</button>
+					</form>
 				</div>
-				<form method="POST" action="/admin/access/custom" class="flex items-center gap-2">
-					<input type="text" name="code" placeholder="Kendi kodunu gir" required minlength="4" maxlength="32" class="input text-sm px-3 py-2" style="background:var(--surface-variant);color:var(--on-surface);border:1px solid var(--outline);border-radius:8px;width:auto;max-width:160px;">
-					<button type="submit" class="btn-filled text-sm py-2 px-5 whitespace-nowrap">KOD EKLE</button>
-				</form>
-			</div>
-			<div class="overflow-x-auto">
-			<table class="md3-table">
-				<thead>
-					<tr>
-						<th class="px-6">ID</th>
-						<th class="px-6">Kod</th>
-						<th class="px-6">Durum</th>
-						<th class="px-6">Oluşturma</th>
-						<th class="px-6">Bitiş</th>
-						<th class="px-6 text-right">İşlem</th>
-					</tr>
-				</thead>
-				<tbody>
-					if len(p.Codes) == 0 {
+				<div class="overflow-x-auto">
+				<table class="cs-table">
+					<thead>
 						<tr>
-							<td colspan="6" class="px-6 py-10 text-center text-sm" style="color:var(--on-surface-variant)">
-								Henüz erişim kodu oluşturulmamış.
-							</td>
+							<th>ID</th><th>Kod</th><th>Durum</th><th>Oluşturma</th><th>Bitiş</th><th class="text-right">İşlem</th>
 						</tr>
-					}
-					for _, c := range p.Codes {
-						<tr>
-							<td class="px-6 mono text-sm" style="color:var(--on-surface-variant)">{ itoa(int(c.ID)) }</td>
-							<td class="px-6 mono text-sm font-semibold tracking-wider" style="color:var(--on-surface)">{ c.Code }</td>
-							<td class="px-6">
-								if c.IsActive {
-									<span class="md3-badge" style="background:var(--primary-container);color:var(--on-primary-container)">AKTİF</span>
-								} else {
-									<span class="md3-badge" style="background:var(--surface-variant);color:var(--on-surface-variant)">PASİF</span>
-								}
-							</td>
-							<td class="px-6 mono text-xs" style="color:var(--on-surface-variant)">{ c.CreatedAt.Format("2006-01-02 15:04") }</td>
-							<td class="px-6 mono text-xs" style="color:var(--on-surface-variant)">{ c.ExpiresAt.Format("2006-01-02 15:04") }</td>
-							<td class="px-6 text-right">
-								if c.IsActive {
-									<form method="POST" action={ templ.SafeURL("/admin/access/" + itoa(int(c.ID)) + "/deactivate") } class="inline">
-										<button type="submit" class="btn-outlined text-xs py-1.5 px-3 whitespace-nowrap" style="color:var(--error);border-color:var(--error)">
-											DEAKTİF ET
-										</button>
-									</form>
-								} else {
-									<form method="POST" action={ templ.SafeURL("/admin/access/" + itoa(int(c.ID)) + "/activate") } class="inline">
-										<button type="submit" class="btn-text text-xs py-1.5 px-3 whitespace-nowrap">
-											AKTİF ET
-										</button>
-									</form>
-								}
-							</td>
-						</tr>
-					}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						if len(p.Codes) == 0 {
+							<tr><td colspan="6" class="text-center text-gray-400 py-10">Henüz erişim kodu oluşturulmamış.</td></tr>
+						}
+						for _, c := range p.Codes {
+							<tr>
+								<td class="text-gray-400">{ itoa(int(c.ID)) }</td>
+								<td class="font-semibold tracking-wider">{ c.Code }</td>
+								<td>
+									if c.IsActive {
+										<span class="cs-badge cs-badge-green">AKTİF</span>
+									} else {
+										<span class="cs-badge cs-badge-gray">PASİF</span>
+									}
+								</td>
+								<td class="text-gray-500 text-xs">{ c.CreatedAt.Format("2006-01-02 15:04") }</td>
+								<td class="text-gray-500 text-xs">{ c.ExpiresAt.Format("2006-01-02 15:04") }</td>
+								<td class="text-right">
+									if c.IsActive {
+										<form method="POST" action={ templ.SafeURL("/admin/access/" + itoa(int(c.ID)) + "/deactivate") } class="inline">
+											<button type="submit" class="cs-btn-danger text-xs py-1.5 px-3">DEAKTİF ET</button>
+										</form>
+									} else {
+										<form method="POST" action={ templ.SafeURL("/admin/access/" + itoa(int(c.ID)) + "/activate") } class="inline">
+											<button type="submit" class="cs-btn-outline text-xs py-1.5 px-3">AKTİF ET</button>
+										</form>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				</div>
 			</div>
-		</div>
+		</main>
 	}
 }

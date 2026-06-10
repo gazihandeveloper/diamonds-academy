@@ -100,6 +100,46 @@ func (r *Repo) CompletedSlots(ctx context.Context, userID int64, dayNo int) (map
 	return out, rows.Err()
 }
 
+// AllCompletedSlots returns all completed (dayNo -> slot -> true) for a user across all days.
+func (r *Repo) AllCompletedSlots(ctx context.Context, userID int64) (map[int]map[string]bool, error) {
+	out := map[int]map[string]bool{}
+	if userID == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT day_no, slot FROM slot_completion WHERE user_id = ?`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var d int
+		var s string
+		if err := rows.Scan(&d, &s); err != nil {
+			return nil, err
+		}
+		if out[d] == nil {
+			out[d] = map[string]bool{}
+		}
+		out[d][s] = true
+	}
+	return out, rows.Err()
+}
+
+// AnySlotCompleted returns true if any slot in the given day is completed.
+func (r *Repo) AnySlotCompleted(ctx context.Context, userID int64, dayNo int) (bool, error) {
+	if userID == 0 {
+		return false, nil
+	}
+	row := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM slot_completion WHERE user_id = ? AND day_no = ?`, userID, dayNo)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 func (r *Repo) QuizCompleted(ctx context.Context, userID int64, dayNo int) (bool, error) {
 	if userID == 0 {
 		return false, nil

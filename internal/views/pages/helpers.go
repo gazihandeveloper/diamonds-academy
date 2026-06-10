@@ -13,9 +13,6 @@ import (
 func itoa(n int) string  { return strconv.Itoa(n) }
 
 func itoa2(n int) string {
-	if n < 10 {
-		return "0" + strconv.Itoa(n)
-	}
 	return strconv.Itoa(n)
 }
 
@@ -87,11 +84,11 @@ func youtubeVideoID(url string) string {
 func tabTitle(key, dayTitle string) string {
 	switch key {
 	case "l1":
-		return "Ders 01"
+		return "Ders 1"
 	case "l2":
-		return "Ders 02"
+		return "Ders 2"
 	case "l3":
-		return "Ders 03"
+		return "Ders 3"
 	case "file":
 		return "Özel Dosya"
 	case "quiz":

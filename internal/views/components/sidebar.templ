@@ -6,101 +6,93 @@ import (
 )
 
 type SidebarProps struct {
-	UserName    string
-	IsLoggedIn  bool
-	IsAdmin     bool
+	UserName   string
+	IsLoggedIn bool
+	IsAdmin    bool
 }
 
 templ Sidebar(p SidebarProps) {
-	<!-- MOBILE TOP BAR -->
-	<header class="md:hidden fixed top-0 left-0 right-0 z-50 bg-bg-panel border-b border-white/5 flex items-center justify-between px-4 py-3">
-		<button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-white/10 transition" aria-label="Toggle menu">
-			<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-				<path d="M4 6h16M4 12h16M4 18h16"/>
-			</svg>
-		</button>
-		<a href="/" class="flex items-center gap-2">
-			@layouts.DiamondLogoSm()
-			<div class="leading-tight">
-				<div class="text-[10px] tracking-[0.2em] text-brand font-bold">DIAMONDS</div>
-				<div class="text-[9px] tracking-[0.2em] text-white/60">ACADEMY</div>
-			</div>
-		</a>
-		<div class="w-9"></div>
-	</header>
-
-	<!-- OVERLAY -->
-	<div id="sidebar-overlay" class="md:hidden fixed inset-0 z-40 bg-black/60 hidden" onclick="toggleSidebar()"></div>
-
-	<!-- SIDEBAR -->
-	<aside id="sidebar" class="fixed top-0 left-0 z-50 w-64 bottom-0 bg-bg-panel border-r border-white/5 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
-		<div class="flex flex-col items-center justify-center gap-5 px-6 pt-8 pb-4 shrink-0">
-			<button id="sidebar-close" class="md:hidden absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 transition" onclick="toggleSidebar()">
-				<svg class="w-4 h-4 text-white/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-					<path d="M6 18L18 6M6 6l12 12"/>
-				</svg>
-			</button>
-			<a href="/" class="hover:opacity-80 transition" onclick="closeSidebar()">
+	<!-- DESKTOP SIDEBAR (md ve üstü) -->
+	<aside id="sidebar" class="hidden md:flex cs-sidebar">
+		<div class="flex flex-col items-center justify-center gap-4 px-6 pt-8 pb-4 shrink-0">
+			<a href="/" class="hover:opacity-80 transition">
 				@layouts.DiamondLogo()
 			</a>
-			<a href="/" class="text-center hover:opacity-80 transition" onclick="closeSidebar()">
-				<div class="logo-text text-2xl tracking-[0.25em]">DIAMONDS</div>
+			<a href="/" class="text-center hover:opacity-80 transition">
+				<div class="text-2xl tracking-[0.25em] font-extrabold text-blue-200">DIAMONDS</div>
 				<div class="text-[11px] tracking-[0.5em] text-white/60 mt-1">ACADEMY</div>
 			</a>
 		</div>
-		<div class="overflow-y-auto px-6 pb-6 pt-2">
-			<div class="space-y-3">
-				if p.IsAdmin {
-					<a href="/admin" class="block w-full py-3 rounded-full border border-brand text-brand text-center hover:bg-brand/10 transition" onclick="closeSidebar()">
-						{ i18n.TC(ctx, "sidebar.admin") }
-					</a>
-				}
-				if p.IsLoggedIn {
-					<a href="/wellbi" class="block w-full py-3 rounded-full border border-brand text-brand text-center hover:bg-brand/10 transition font-bold tracking-wider" onclick="closeSidebar()">
-						🤖 { i18n.TC(ctx, "sidebar.wellbi") }
-					</a>
-					<a href="/profile" class="block w-full py-3 rounded-full border border-white/20 text-white text-center hover:border-brand hover:text-brand-light transition" onclick="closeSidebar()">
-						{ i18n.TC(ctx, "sidebar.profile") }
-					</a>
-					<form method="POST" action="/logout">
-						<button type="submit" class="w-full py-3 rounded-full btn-primary font-semibold">
-							{ i18n.TC(ctx, "sidebar.logout") }
-						</button>
-					</form>
-				} else {
-					<a href="/login" class="block w-full py-3 rounded-full btn-primary font-semibold text-center" onclick="closeSidebar()">
-						{ i18n.TC(ctx, "sidebar.login") }
-					</a>
-				}
-			</div>
+
+		<div class="flex-1 overflow-y-auto px-3 pb-6 pt-2 space-y-1">
+			<div class="cs-sidebar-divider"></div>
+			if p.IsAdmin {
+				<a href="/admin" class="cs-sidebar-item">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+					{ i18n.TC(ctx, "sidebar.admin") }
+				</a>
+			}
+			if p.IsLoggedIn {
+				<a href="/wellbi" class="cs-sidebar-item">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+					{ i18n.TC(ctx, "sidebar.wellbi") }
+				</a>
+				<a href="/profile" class="cs-sidebar-item">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+					{ i18n.TC(ctx, "sidebar.profile") }
+				</a>
+			}
+		</div>
+
+		<div class="px-3 pb-6 shrink-0 space-y-1">
+			if p.IsLoggedIn {
+				<form method="POST" action="/logout">
+					<button type="submit" class="cs-sidebar-item w-full text-left">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+						{ i18n.TC(ctx, "sidebar.logout") }
+					</button>
+				</form>
+			} else {
+				<a href="/login" class="cs-sidebar-item">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+					{ i18n.TC(ctx, "sidebar.login") }
+				</a>
+			}
 		</div>
 	</aside>
 
-	<script>
-		// === Sidebar ===
-		function toggleSidebar() {
-			var s = document.getElementById('sidebar');
-			var o = document.getElementById('sidebar-overlay');
-			if (!s) return;
-			var isOpen = !s.classList.contains('-translate-x-full');
-			s.classList.toggle('-translate-x-full');
-			if (o) o.classList.toggle('hidden');
-			document.body.classList.toggle('overflow-hidden', !isOpen);
+	// ============ MOBILE BOTTOM NAV ============
+	<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex items-center justify-around safe-bottom" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+		<a href="/" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition min-w-0">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+			<span>Anasayfa</span>
+		</a>
+		if p.IsLoggedIn {
+			<a href="/profile" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition min-w-0">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+				<span>Profil</span>
+			</a>
+			if p.IsAdmin {
+				<a href="/admin" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition min-w-0">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+					<span>Yönetim</span>
+				</a>
+			}
+			<a href="/wellbi" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition min-w-0">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+				<span>Wellbi</span>
+			</a>
+			<form method="POST" action="/logout" class="min-w-0">
+				<button type="submit" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-red-500 transition min-w-0">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+					<span>Çıkış</span>
+				</button>
+			</form>
+		} else {
+			<a href="/login" class="mobile-nav-item flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition min-w-0">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+				<span>Giriş</span>
+			</a>
 		}
-		function closeSidebar() {
-			var s = document.getElementById('sidebar');
-			var o = document.getElementById('sidebar-overlay');
-			if (!s) return;
-			s.classList.add('-translate-x-full');
-			if (o) o.classList.add('hidden');
-			document.body.classList.remove('overflow-hidden');
-		}
-		// Close sidebar on Escape key
-		document.addEventListener('keydown', function(e) {
-			if (e.key === 'Escape') closeSidebar();
-		});
-		// Hamburger toggle
-		var btn = document.getElementById('sidebar-toggle');
-		if (btn) btn.addEventListener('click', toggleSidebar);
-	</script>
+	</nav>
 }

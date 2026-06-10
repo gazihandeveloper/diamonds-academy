@@ -18,54 +18,413 @@ templ Base(title, theme string) {
 					theme: {
 						extend: {
 							colors: {
-								brand: { DEFAULT: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
-								bg: { DEFAULT: '#0a0a0a', panel: '#111111', card: '#161616' },
+								brand: {
+									DEFAULT: '#0972d3',
+									hover:   '#065299',
+									light:   '#d3e7f9',
+									dark:    '#033160',
+								},
+								surface: {
+									DEFAULT: '#ffffff',
+									panel:   '#fbfbfb',
+									raised:  '#ffffff',
+									hover:   '#f2f8fd',
+								},
+								border: {
+									DEFAULT: '#d5dbdb',
+									light:   '#e9ebed',
+									divider: '#eaeded',
+								},
+								text: {
+									primary:   '#16191f',
+									secondary: '#545b64',
+									disabled:  '#9ba7b6',
+									inverted:  '#ffffff',
+								},
 							},
-							fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+							fontFamily: { sans: ['Inter','system-ui','-apple-system','sans-serif'] },
+							borderRadius: { 'cs': '8px', 'cs-md': '6px' },
+							boxShadow: {
+								'cs': '0 1px 1px 0 rgba(0,28,36,0.3), 0 1px 0 0 #eaeded',
+								'cs-raised': '0 2px 4px 1px rgba(0,28,36,0.15)',
+								'cs-overlay': '0 4px 20px 0 rgba(0,28,36,0.18)',
+							},
 						},
 					},
 				}
 			</script>
 			<style>
-				body { font-family: 'Inter', sans-serif; background: #0a0a0a; }
+				/* ===== Cloudscape Design Tokens ===== */
+				:root {
+					--cs-blue-600: #0972d3;
+					--cs-blue-700: #065299;
+					--cs-blue-100: #d3e7f9;
+					--cs-blue-900: #033160;
+					--cs-white: #ffffff;
+					--cs-gray-100: #fbfbfb;
+					--cs-gray-200: #f2f3f3;
+					--cs-gray-300: #eaeded;
+					--cs-gray-400: #d5dbdb;
+					--cs-gray-600: #879596;
+					--cs-gray-700: #687078;
+					--cs-gray-800: #545b64;
+					--cs-gray-900: #232f3e;
+					--cs-gray-950: #16191f;
+					--cs-red-600: #d13212;
+					--cs-green-600: #037f0c;
+					--cs-orange-600: #e07806;
+				}
+
+				/* ===== Reset & Base ===== */
+				body {
+					font-family: 'Inter', Arial, system-ui, -apple-system, sans-serif;
+					background: var(--cs-gray-100);
+					color: var(--cs-gray-950);
+					margin: 0;
+					-webkit-font-smoothing: antialiased;
+					-moz-osx-font-smoothing: grayscale;
+				}
 				*,*::after,*::before { -webkit-tap-highlight-color: transparent; }
 				.h-dynamic { height: 100vh; height: 100dvh; }
 				.min-h-dynamic { min-height: 100vh; min-height: 100dvh; }
+
+				/* ===== Cloudscape Card ===== */
+				.cs-card {
+					background: var(--cs-white);
+					border: 1px solid var(--cs-gray-300);
+					border-radius: 8px;
+					box-shadow: 0 1px 1px 0 rgba(0,28,36,0.2);
+				}
+				.cs-card-raised {
+					background: var(--cs-white);
+					border: 1px solid var(--cs-gray-300);
+					border-radius: 8px;
+					box-shadow: 0 2px 4px 1px rgba(0,28,36,0.12);
+				}
+				.cs-card:hover {
+					box-shadow: 0 2px 4px 1px rgba(0,28,36,0.12);
+					border-color: var(--cs-gray-400);
+				}
+
+				/* ===== Cloudscape Buttons ===== */
+				.cs-btn-primary {
+					display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+					padding: .375rem 1.25rem;
+					background: var(--cs-blue-600); color: #fff;
+					border: 1px solid var(--cs-blue-600); border-radius: 8px;
+					font-weight: 600; font-size: .875rem; line-height: 1.375rem;
+					cursor: pointer; text-decoration: none;
+					transition: background .15s ease, border-color .15s ease;
+				}
+				.cs-btn-primary:hover { background: var(--cs-blue-700); border-color: var(--cs-blue-700); }
+				.cs-btn-primary:active { background: var(--cs-blue-900); }
+				.cs-btn-primary:disabled { background: var(--cs-gray-400); border-color: var(--cs-gray-400); color: var(--cs-gray-700); cursor: not-allowed; }
+
+				.cs-btn-normal {
+					display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+					padding: .375rem 1.25rem;
+					background: var(--cs-white); color: var(--cs-gray-800);
+					border: 1px solid var(--cs-gray-400); border-radius: 8px;
+					font-weight: 500; font-size: .875rem; line-height: 1.375rem;
+					cursor: pointer; text-decoration: none;
+					transition: background .15s ease, border-color .15s ease;
+				}
+				.cs-btn-normal:hover { background: var(--cs-gray-200); color: var(--cs-gray-950); }
+				.cs-btn-normal:active { background: var(--cs-gray-300); }
+
+				/* ===== Cloudscape Step Button (Day button) ===== */
+				.cs-step-btn {
+					width: 2.25rem; height: 2.25rem;
+					border-radius: 8px;
+					display: inline-flex; align-items: center; justify-content: center;
+					font-size: .8125rem; font-weight: 600;
+					border: 1px solid var(--cs-gray-400);
+					background: var(--cs-white);
+					color: var(--cs-gray-800);
+					cursor: pointer; text-decoration: none;
+					transition: all .15s ease;
+				}
+				.cs-step-btn:hover { background: var(--cs-gray-200); border-color: var(--cs-blue-600); color: var(--cs-blue-600); }
+				.cs-step-btn.active { background: var(--cs-blue-600); color: #fff; border-color: var(--cs-blue-600); }
+				.cs-step-btn.completed { background: var(--cs-blue-100); color: var(--cs-blue-700); border-color: var(--cs-blue-600); }
+				.cs-step-btn.locked { background: var(--cs-gray-200); color: var(--cs-gray-600); border-color: var(--cs-gray-300); cursor: not-allowed; }
+				@media (min-width: 640px) { .cs-step-btn { width: 2.5rem; height: 2.5rem; } }
+
+				/* ===== Cloudscape Sidebar ===== */
+				.cs-sidebar {
+					position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
+					width: 16rem;
+					background: var(--cs-gray-900);
+					color: var(--cs-white);
+					display: flex; flex-direction: column;
+					border-right: 1px solid var(--cs-gray-800);
+				}
+				.cs-sidebar-item {
+					display: flex; align-items: center; gap: .75rem;
+					padding: .625rem 1rem;
+					color: var(--cs-white);
+					text-decoration: none;
+					font-size: .875rem; font-weight: 500;
+					border-left: 2px solid transparent;
+					transition: background .1s ease, border-color .1s ease;
+				}
+				.cs-sidebar-item:hover { background: rgba(255,255,255,.06); }
+				.cs-sidebar-item.active { background: rgba(255,255,255,.1); border-left-color: var(--cs-blue-600); color: var(--cs-blue-100); }
+				.cs-sidebar-divider { height: 1px; background: rgba(255,255,255,.1); margin: .5rem 1rem; }
+				.cs-sidebar-brand { padding: 1.25rem 1rem; font-weight: 700; font-size: 1rem; color: var(--cs-blue-100); letter-spacing: .05em; }
+
+				/* ===== Cloudscape Header Bar (mobile) ===== */
+				.cs-topbar {
+					position: sticky; top: 0; z-index: 30;
+					background: var(--cs-gray-900);
+					color: var(--cs-white);
+					display: flex; align-items: center; justify-content: space-between;
+					padding: .5rem 1rem; height: 3rem;
+				}
+
+				/* ===== Cloudscape Progress ===== */
+				.cs-progress {
+					height: .375rem;
+					background: var(--cs-gray-300);
+					border-radius: 9999px; overflow: hidden;
+				}
+				.cs-progress-fill {
+					height: 100%;
+					background: var(--cs-blue-600);
+					border-radius: 9999px;
+					transition: width .4s ease;
+				}
+
+				/* ===== Cloudscape Divider ===== */
+				.cs-divider { height: 1px; background: var(--cs-gray-300); margin: 0; }
+
+				/* ===== Cloudscape Input ===== */
+				.cs-input {
+					display: block; width: 100%;
+					padding: .375rem .75rem;
+					border: 1px solid var(--cs-gray-400);
+					border-radius: 6px;
+					font-size: .875rem; color: var(--cs-gray-950);
+					background: var(--cs-white);
+					transition: border-color .15s ease, box-shadow .15s ease;
+					outline: none;
+				}
+				.cs-input:focus { border-color: var(--cs-blue-600); box-shadow: 0 0 0 2px rgba(9,114,211,.15); }
+				.cs-input::placeholder { color: var(--cs-gray-600); }
+
+				.cs-label {
+					display: block;
+					font-size: .8125rem; font-weight: 600; color: var(--cs-gray-800);
+					margin-bottom: .25rem;
+				}
+
+				/* ===== Cloudscape Badge ===== */
+				.cs-badge {
+					display: inline-flex; align-items: center;
+					padding: 0 .5rem; border-radius: 9999px;
+					font-size: .6875rem; font-weight: 600; letter-spacing: .05em;
+					text-transform: uppercase;
+					line-height: 1.25rem;
+				}
+				.cs-badge-success { background: #e6f4ea; color: var(--cs-green-600); }
+				.cs-badge-info { background: var(--cs-blue-100); color: var(--cs-blue-700); }
+				.cs-badge-error { background: #fdecea; color: var(--cs-red-600); }
+
+				/* ===== Cloudscape Step Dot (learn progress) ===== */
+				.cs-dot { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .6875rem; font-weight: 700; border: 2px solid var(--cs-gray-400); background: var(--cs-white); color: var(--cs-gray-700); }
+				.cs-dot.completed { background: var(--cs-blue-600); border-color: var(--cs-blue-600); color: #fff; }
+				.cs-dot.active { background: var(--cs-white); border-color: var(--cs-blue-600); color: var(--cs-blue-600); }
+				.cs-dot-line { width: 1.5rem; height: 2px; background: var(--cs-gray-300); }
+				.cs-dot-line.completed { background: var(--cs-blue-600); }
+
+				/* ===== Cloudscape Quiz Option ===== */
+				.cs-q-opt {
+					display: flex; align-items: center; gap: .75rem;
+					padding: .625rem 1rem;
+					border: 1px solid var(--cs-gray-400); border-radius: 8px;
+					background: var(--cs-white); color: var(--cs-gray-950);
+					cursor: pointer; font-size: .875rem;
+					transition: border-color .15s ease, background .15s ease;
+				}
+				.cs-q-opt:hover { border-color: var(--cs-blue-600); background: var(--cs-gray-200); }
+				.cs-q-opt input[type="radio"] { accent-color: var(--cs-blue-600); }
+
+				/* ===== Cloudscape Locked Block ===== */
+				.cs-locked {
+					text-align: center;
+					padding: 3rem 2rem;
+					background: var(--cs-gray-100);
+					border: 1px dashed var(--cs-gray-400);
+					border-radius: 8px;
+				}
+
+				/* ===== Cloudscape Page Title ===== */
+				.cs-page-title {
+					font-size: 1.75rem; font-weight: 700;
+					color: var(--cs-gray-950);
+					margin: 0 0 .5rem 0;
+					letter-spacing: -.02em;
+				}
+				.cs-section-title {
+					font-size: 1.125rem; font-weight: 600;
+					color: var(--cs-gray-900);
+					margin: 0 0 .75rem 0;
+				}
+
+				/* ===== Plyr Video Player (Cloudscape themed) ===== */
+				:root {
+					--plyr-color-main: #0972d3;
+					--plyr-video-control-color: #ffffff;
+					--plyr-video-control-color-hover: #ffffff;
+					--plyr-video-control-background-hover: #0972d3;
+					--plyr-menu-background: rgba(22,25,31,.96);
+					--plyr-menu-color: #ffffff;
+					--plyr-tooltip-background: #0972d3;
+					--plyr-tooltip-color: #ffffff;
+					--plyr-range-fill-background: #0972d3;
+					--plyr-video-progress-buffered-background: rgba(9,114,211,.25);
+					--plyr-font-family: Arial, 'Inter', system-ui, sans-serif;
+				}
+				.plyr { border-radius: 8px; overflow: hidden; border: 1px solid var(--cs-gray-300); }
+				.plyr--video .plyr__control--overlaid { background: #0972d3; }
+				.plyr--video .plyr__control--overlaid:hover { background: #065299; }
+				.plyr__progress__buffer { background: rgba(9,114,211,.2); }
+				.plyr__menu__container .plyr__control[role=menuitemradio][aria-checked=true]::before { background: #0972d3; }
+
+				/* ===== Dark Theme ===== */
+				[data-theme="dark"] {
+					--cs-gray-100: #0f1117;
+					--cs-gray-200: #1a1d27;
+					--cs-gray-300: #2d3140;
+					--cs-gray-400: #3d4154;
+					--cs-gray-600: #6b7084;
+					--cs-gray-700: #8b90a4;
+					--cs-gray-800: #b0b5c4;
+					--cs-gray-900: #d1d5e0;
+					--cs-gray-950: #e1e4ea;
+					--cs-white: #1a1d27;
+					--cs-blue-100: #1a2744;
+				}
+				[data-theme="dark"] body {
+					background: #0f1117;
+					color: #e1e4ea;
+				}
+				[data-theme="dark"] .cs-card {
+					background: #1a1d27;
+					border-color: #2d3140;
+					box-shadow: 0 1px 1px 0 rgba(0,0,0,.4);
+				}
+				[data-theme="dark"] .cs-step-btn {
+					background: #1a1d27;
+					border-color: #3d4154;
+					color: #b0b5c4;
+				}
+				[data-theme="dark"] .cs-step-btn:hover {
+					background: #2d3140;
+				}
+				[data-theme="dark"] .cs-step-btn.locked {
+					background: #1a1d27;
+					color: #6b7084;
+					border-color: #2d3140;
+				}
+				[data-theme="dark"] .cs-q-opt {
+					background: #1a1d27;
+					border-color: #3d4154;
+					color: #e1e4ea;
+				}
+				[data-theme="dark"] .cs-q-opt:hover {
+					background: #2d3140;
+				}
+				[data-theme="dark"] .cs-input {
+					background: #1a1d27;
+					border-color: #3d4154;
+					color: #e1e4ea;
+				}
+				[data-theme="dark"] .cs-divider {
+					background: #2d3140;
+				}
+				[data-theme="dark"] .cs-locked {
+					background: #1a1d27;
+					border-color: #3d4154;
+				}
+				[data-theme="dark"] .bg-white { background: #1a1d27; }
+				[data-theme="dark"] .bg-gray-50 { background: #0f1117; }
+				[data-theme="dark"] .text-gray-900 { color: #e1e4ea; }
+				[data-theme="dark"] .text-gray-800 { color: #d1d5e0; }
+				[data-theme="dark"] .text-gray-700 { color: #b0b5c4; }
+				[data-theme="dark"] .text-gray-600 { color: #8b90a4; }
+				[data-theme="dark"] .text-gray-500 { color: #6b7084; }
+				[data-theme="dark"] .text-gray-400 { color: #6b7084; }
+				[data-theme="dark"] .border-gray-200 { border-color: #2d3140; }
+				[data-theme="dark"] .border-gray-300 { border-color: #3d4154; }
+				[data-theme="dark"] .border-b { border-color: #2d3140; }
+				[data-theme="dark"] .border-t { border-color: #2d3140; }
+				[data-theme="dark"] .bg-blue-600 { background: #0972d3; }
+				[data-theme="dark"] .bg-blue-100 { background: #1a2744; }
+				[data-theme="dark"] .bg-amber-100 { background: #2d2010; }
+				[data-theme="dark"] .cs-badge-blue { background: #1a2744; color: #60a5fa; }
+				[data-theme="dark"] .cs-badge-green { background: #1a2e1a; color: #4ade80; }
+				[data-theme="dark"] .bg-blue-50 { background: #1a2744; }
+				[data-theme="dark"] .border-blue-200 { border-color: #1e3a5f; }
+				[data-theme="dark"] .border-amber-200 { border-color: #3d2a10; }
+
+				/* Theme toggle button */
+				.theme-toggle-btn {
+					background: none; border: 1px solid var(--cs-gray-400);
+					border-radius: 8px; padding: .375rem;
+					cursor: pointer; color: var(--cs-gray-700);
+					display: flex; align-items: center; justify-content: center;
+					transition: all .15s;
+				}
+				.theme-toggle-btn:hover { border-color: var(--cs-blue-600); color: var(--cs-blue-600); }
+
+				/* ===== Utility ===== */
 				.fixed-bottom-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 				.fixed-top-safe { padding-top: env(safe-area-inset-top, 0px); }
 
-				.day-btn { transition: all 0.2s ease; }
-				.day-btn:hover { border-color: #a855f7; color: #c084fc; }
-				.day-btn.active { background: #a855f7; color: #0a0a0a; border-color: #a855f7; }
-				.day-btn.completed { border-color: #a855f7; color: #a855f7; }
-				.progress-bar { background: linear-gradient(90deg,#a855f7 0%,#c084fc 100%); box-shadow: 0 0 12px rgba(168,85,247,.6); }
-				.card-glow { background: radial-gradient(ellipse at bottom, rgba(168,85,247,.15) 0%, transparent 70%), #161616; }
-				.btn-primary { background:#a855f7; color:#0a0a0a; transition: all .2s ease; }
-				.btn-primary:hover { background:#c084fc; box-shadow:0 0 20px rgba(168,85,247,.5); }
-				.logo-text { color:#a855f7; font-weight:800; line-height:.9; }
-				.diamond-glow { filter: drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 0 28px rgba(168,85,247,.25)); animation: diamondPulse 3.5s ease-in-out infinite; }
-				@keyframes diamondPulse {
-					0%,100% { filter: drop-shadow(0 0 12px rgba(168,85,247,.45)) drop-shadow(0 0 24px rgba(168,85,247,.2)); }
-					50%     { filter: drop-shadow(0 0 20px rgba(192,132,252,.75)) drop-shadow(0 0 40px rgba(168,85,247,.4)); }
+				/* ===== Responsive ===== */
+				@media (max-width: 767px) {
+					.cs-sidebar { display: none; width: 100%; }
+					.cs-sidebar.open { display: flex; width: 100%; }
+					.cs-sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 35; }
+					.cs-step-btn { width: 1.5rem; height: 1.5rem; font-size: .625rem; border-radius: 4px; }
+					.cs-card { border-radius: 0; border-left: 0; border-right: 0; }
+					.cs-q-opt { padding: .75rem .875rem; font-size: .875rem; }
+					.plyr { border-radius: 0; border-left: 0; border-right: 0; }
 				}
-				:root {
-					--plyr-color-main: #a855f7;
-					--plyr-video-control-color: #ffffff;
-					--plyr-video-control-color-hover: #0a0a0a;
-					--plyr-video-control-background-hover: #a855f7;
-					--plyr-menu-background: rgba(17,17,17,.95);
-					--plyr-menu-color: #ffffff;
-					--plyr-tooltip-background: #a855f7;
-					--plyr-tooltip-color: #0a0a0a;
-					--plyr-range-fill-background: #a855f7;
-					--plyr-video-progress-buffered-background: rgba(168,85,247,.35);
-					--plyr-font-family: 'Inter', system-ui, sans-serif;
+				@media (max-width: 380px) {
+					.cs-step-btn { width: 1.375rem; height: 1.375rem; font-size: .5625rem; }
 				}
-				.plyr { border-radius: 1rem; overflow: hidden; box-shadow: 0 0 40px rgba(168,85,247,.15); }
 			</style>
 		</head>
-		<body class="text-white min-h-dynamic">
+		<body class="min-h-dynamic">
 			{ children... }
+			<script>
+				(function(){
+					var theme = localStorage.getItem('theme') || 'light';
+					if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+					window.toggleTheme = function() {
+						var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+						if (isDark) {
+							document.documentElement.removeAttribute('data-theme');
+							localStorage.setItem('theme', 'light');
+						} else {
+							document.documentElement.setAttribute('data-theme', 'dark');
+							localStorage.setItem('theme', 'dark');
+						}
+						updateThemeIcon();
+					};
+					window.updateThemeIcon = function() {
+						var icon = document.getElementById('theme-icon');
+						if (!icon) return;
+						var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+						icon.innerHTML = isDark
+							? '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>'
+							: '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+					};
+					updateThemeIcon();
+				})();
+			</script>
 			<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 			<script src="/static/js/diamonds-flow.js"></script>
 			<script src="/static/js/plyr-init.js?v=5"></script>
@@ -74,24 +433,24 @@ templ Base(title, theme string) {
 }
 
 templ DiamondLogo() {
-	<svg class="w-36 h-28 diamond-glow" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+	<svg class="w-36 h-28" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
 		<defs>
 			<linearGradient id="diamondTop" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stop-color="#f5d0fe"/>
-				<stop offset="100%" stop-color="#a855f7"/>
+				<stop offset="0%" stop-color="#89bdee"/>
+				<stop offset="100%" stop-color="#0972d3"/>
 			</linearGradient>
 			<linearGradient id="diamondBottom" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stop-color="#c084fc"/>
-				<stop offset="100%" stop-color="#7e22ce"/>
+				<stop offset="0%" stop-color="#0972d3"/>
+				<stop offset="100%" stop-color="#033160"/>
 			</linearGradient>
 		</defs>
 		<polygon points="6,28 26,6 74,6 94,28" fill="url(#diamondTop)"/>
-		<polygon points="6,28 26,6 50,28" fill="#e9d5ff" opacity="0.85"/>
-		<polygon points="74,6 94,28 50,28" fill="#a855f7" opacity="0.9"/>
-		<polygon points="26,6 50,28 74,6" fill="#f5d0fe"/>
+		<polygon points="6,28 26,6 50,28" fill="#d3e7f9" opacity="0.85"/>
+		<polygon points="74,6 94,28 50,28" fill="#0972d3" opacity="0.9"/>
+		<polygon points="26,6 50,28 74,6" fill="#d3e7f9"/>
 		<polygon points="6,28 94,28 50,76" fill="url(#diamondBottom)"/>
-		<polygon points="6,28 50,28 50,76" fill="#9333ea" opacity="0.85"/>
-		<polygon points="50,28 94,28 50,76" fill="#7e22ce"/>
+		<polygon points="6,28 50,28 50,76" fill="#065299" opacity="0.85"/>
+		<polygon points="50,28 94,28 50,76" fill="#033160"/>
 		<line x1="26" y1="6" x2="50" y2="76" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
 		<line x1="74" y1="6" x2="50" y2="76" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
 		<line x1="6" y1="28" x2="94" y2="28" stroke="#fff" stroke-opacity="0.4" stroke-width="0.7"/>
@@ -99,23 +458,23 @@ templ DiamondLogo() {
 }
 
 templ DiamondLogoSm() {
-	<svg class="w-10 h-8 diamond-glow" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+	<svg class="w-10 h-8" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
 		<defs>
 			<linearGradient id="diamondTopSm" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stop-color="#f5d0fe"/>
-				<stop offset="100%" stop-color="#a855f7"/>
+				<stop offset="0%" stop-color="#89bdee"/>
+				<stop offset="100%" stop-color="#0972d3"/>
 			</linearGradient>
 			<linearGradient id="diamondBottomSm" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stop-color="#c084fc"/>
-				<stop offset="100%" stop-color="#7e22ce"/>
+				<stop offset="0%" stop-color="#0972d3"/>
+				<stop offset="100%" stop-color="#033160"/>
 			</linearGradient>
 		</defs>
 		<polygon points="6,28 26,6 74,6 94,28" fill="url(#diamondTopSm)"/>
-		<polygon points="6,28 26,6 50,28" fill="#e9d5ff" opacity="0.85"/>
-		<polygon points="74,6 94,28 50,28" fill="#a855f7" opacity="0.9"/>
-		<polygon points="26,6 50,28 74,6" fill="#f5d0fe"/>
+		<polygon points="6,28 26,6 50,28" fill="#d3e7f9" opacity="0.85"/>
+		<polygon points="74,6 94,28 50,28" fill="#0972d3" opacity="0.9"/>
+		<polygon points="26,6 50,28 74,6" fill="#d3e7f9"/>
 		<polygon points="6,28 94,28 50,76" fill="url(#diamondBottomSm)"/>
-		<polygon points="6,28 50,28 50,76" fill="#9333ea" opacity="0.85"/>
-		<polygon points="50,28 94,28 50,76" fill="#7e22ce"/>
+		<polygon points="6,28 50,28 50,76" fill="#065299" opacity="0.85"/>
+		<polygon points="50,28 94,28 50,76" fill="#033160"/>
 	</svg>
 }

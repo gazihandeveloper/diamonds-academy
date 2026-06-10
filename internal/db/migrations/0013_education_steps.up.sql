@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS education_steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    step_no INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('video', 'quiz')),
+    video_url TEXT NOT NULL DEFAULT '',
+    quiz_json TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

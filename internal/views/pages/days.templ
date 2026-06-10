@@ -12,51 +12,50 @@ type DaysListProps struct {
 
 templ DaysList(p DaysListProps) {
 	@layouts.AdminBase("Eğitimler", "days") {
+		<main class="p-4 md:p-6 pt-16 md:pt-6">
 		if p.Flash != "" {
-			<div class="px-4 py-3 rounded-lg text-sm font-medium" style="background:var(--primary-container);color:var(--on-primary-container)">
-				{ p.Flash }
-			</div>
+			<div class="cs-alert cs-alert-success mb-4">{ p.Flash }</div>
 		}
-		<section class="md3-card overflow-hidden">
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
+		<div class="cs-card">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-200">
 				<div>
-					<h2 class="text-base font-semibold" style="color:var(--on-surface)">Eğitimler</h2>
-		<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">Tüm eğitim modüllerini yönetin</p>
+					<h2 class="text-sm font-semibold text-gray-900">Eğitimler</h2>
+					<p class="text-xs text-gray-500 mt-0.5">Tüm eğitim modüllerini yönetin</p>
 				</div>
-				<a href="/admin/days/new" class="btn-filled text-sm py-2 px-5 no-underline w-full sm:w-auto text-center">+ YENİ EĞİTİM</a>
+				<a href="/admin/days/new" class="cs-btn-primary text-sm w-full sm:w-auto text-center">+ YENİ EĞİTİM</a>
 			</div>
 			<div class="overflow-x-auto">
-			<table class="md3-table">
+			<table class="cs-table">
 				<thead>
 					<tr>
-						<th class="px-6">EĞİTİM</th>
-						<th class="px-6">Başlık</th>
-						<th class="px-6">İçerik</th>
-						<th class="px-6">Durum</th>
-						<th class="px-6 text-right">İşlem</th>
+						<th>EĞİTİM</th>
+						<th>Başlık</th>
+						<th>İçerik</th>
+						<th>Durum</th>
+						<th class="text-right">İşlem</th>
 					</tr>
 				</thead>
 				<tbody>
 					if len(p.Days) == 0 {
-						<tr><td colspan="5" class="px-6 py-10 text-center text-sm" style="color:var(--on-surface-variant)">Henüz eğitim eklenmedi.</td></tr>
+						<tr><td colspan="5" class="px-4 py-10 text-center text-gray-400">Henüz eğitim eklenmedi.</td></tr>
 					}
 					for _, d := range p.Days {
 						<tr>
-							<td class="px-6 mono text-sm font-semibold" style="color:var(--primary)">{ itoa2(d.DayNo) }</td>
-							<td class="px-6" style="color:var(--on-surface)">{ d.Title }</td>
-							<td class="px-6 text-xs" style="color:var(--on-surface-variant)">{ joinBullets(d.Bullets) }</td>
-							<td class="px-6">
+							<td style="color:#0972d3;font-weight:600">{ itoa2(d.DayNo) }</td>
+							<td>{ d.Title }</td>
+							<td class="text-gray-500 text-xs">{ joinBullets(d.Bullets) }</td>
+							<td>
 								if d.Published {
-									<span class="md3-badge" style="background:var(--primary-container);color:var(--on-primary-container)">YAYINDA</span>
+									<span class="cs-badge cs-badge-green">YAYINDA</span>
 								} else {
-									<span class="md3-badge" style="background:var(--surface-variant);color:var(--on-surface-variant)">TASLAK</span>
+									<span class="cs-badge cs-badge-gray">TASLAK</span>
 								}
 							</td>
-							<td class="px-6 text-right whitespace-nowrap">
-								<a href={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/edit") } class="btn-text text-sm py-1 px-3 inline-flex">DÜZENLE</a>
+							<td class="text-right whitespace-nowrap">
+								<a href={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/edit") } class="cs-btn-outline text-xs py-1 px-3">DÜZENLE</a>
 								<form method="POST" action={ templ.SafeURL("/admin/days/" + itoa(int(d.ID)) + "/delete") } class="inline"
 									onsubmit="return confirm('Bu eğitimi silmek istediğine emin misin?');">
-									<button class="btn-text text-sm py-1 px-3" style="color:var(--error)">SİL</button>
+									<button class="cs-btn-danger text-xs py-1 px-3">SİL</button>
 								</form>
 							</td>
 						</tr>
@@ -64,7 +63,8 @@ templ DaysList(p DaysListProps) {
 				</tbody>
 			</table>
 			</div>
-		</section>
+		</div>
+		</main>
 	}
 }
 
@@ -91,74 +91,74 @@ type DayFormProps struct {
 
 templ DayForm(p DayFormProps) {
 	@layouts.AdminBase(formTitle(p.IsEdit), "days") {
-		<div class="w-full">
+		<main class="p-4 md:p-6 pt-16 md:pt-6 max-w-4xl">
 			if p.Error != "" {
-				<div class="px-4 py-3 rounded-lg text-sm font-medium" style="background:var(--error-container);color:var(--on-error-container)">{ p.Error }</div>
+				<div class="cs-alert cs-alert-error mb-4">{ p.Error }</div>
 			}
-			<form method="POST" action={ formAction(p) } enctype="multipart/form-data" class="md3-card p-4 sm:p-6 space-y-6">
+			<form method="POST" action={ formAction(p) } enctype="multipart/form-data" class="cs-card p-5 md:p-6 space-y-5">
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div>
-						<label class="md3-label">EĞİTİM NO</label>
+						<label class="cs-label">EĞİTİM NO</label>
 						<input type="number" name="day_no" min="1" required
 							value={ itoa(p.DayNo) }
-							class="md3-outlined mono"/>
+							class="cs-input"/>
 					</div>
 					<div class="col-span-2">
-						<label class="md3-label">BAŞLIK</label>
+						<label class="cs-label">BAŞLIK</label>
 						<input type="text" name="title" required
 							value={ p.Title }
-							class="md3-outlined"/>
+							class="cs-input"/>
 					</div>
 				</div>
 
 				<div>
-					<label class="md3-label">İÇERİK BAŞLIKLARI (her satıra bir başlık)</label>
+					<label class="cs-label">İÇERİK BAŞLIKLARI (her satıra bir başlık)</label>
 					<textarea name="bullets" rows="4"
-						class="md3-outlined">{ p.BulletsText }</textarea>
+						class="cs-textarea">{ p.BulletsText }</textarea>
 				</div>
 
 				<div>
-					<label class="md3-label">DERS AÇIKLAMASI</label>
+					<label class="cs-label">DERS AÇIKLAMASI</label>
 					<textarea name="description" rows="6"
-						class="md3-outlined">{ p.Description }</textarea>
+						class="cs-input">{ p.Description }</textarea>
 				</div>
 
 				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
-					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">DERS VİDEOLARI</div>
+					<div class="text-xs font-semibold tracking-wider mb-4 text-blue-600 uppercase">DERS VİDEOLARI</div>
 					<div class="space-y-4">
 						<div>
-							<label class="md3-label">DERS 01 — VİDEO URL</label>
+							<label class="cs-label">DERS 1 — VİDEO URL</label>
 							<div class="flex gap-2">
 								<input type="url" name="video1_url" value={ p.Video1URL } placeholder="https://..."
-									class="md3-outlined mono text-sm flex-1"/>
-								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video1URL }>Altyazı Çek</button>
+									class="cs-input mono text-sm flex-1"/>
+								<button type="button" class="cs-btn-outline text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video1URL }>Altyazı Çek</button>
 							</div>
 						</div>
 						<div>
-							<label class="md3-label">DERS 02 — VİDEO URL</label>
+							<label class="cs-label">DERS 2 — VİDEO URL</label>
 							<div class="flex gap-2">
 								<input type="url" name="video2_url" value={ p.Video2URL } placeholder="https://..."
-									class="md3-outlined mono text-sm flex-1"/>
-								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video2URL }>Altyazı Çek</button>
+									class="cs-input mono text-sm flex-1"/>
+								<button type="button" class="cs-btn-outline text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video2URL }>Altyazı Çek</button>
 							</div>
 						</div>
 						<div>
-							<label class="md3-label">DERS 03 — VİDEO URL</label>
+							<label class="cs-label">DERS 3 — VİDEO URL</label>
 							<div class="flex gap-2">
 								<input type="url" name="video3_url" value={ p.Video3URL } placeholder="https://..."
-									class="md3-outlined mono text-sm flex-1"/>
-								<button type="button" class="btn-outlined text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video3URL }>Altyazı Çek</button>
+									class="cs-input mono text-sm flex-1"/>
+								<button type="button" class="cs-btn-outline text-xs py-2 px-3 whitespace-nowrap transcript-btn" data-url={ p.Video3URL }>Altyazı Çek</button>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
-					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">DERS DOSYASI (PDF)</div>
+					<div class="text-xs font-semibold tracking-wider mb-4 text-blue-600 uppercase">DERS DOSYASI (PDF)</div>
 					if p.FilePath != "" {
 						<div class="flex items-center gap-3 mb-3 px-4 py-3 rounded-lg" style="background:var(--surface-variant)">
 							<a href={ templ.SafeURL(p.FilePath) } target="_blank" rel="noopener" class="text-sm font-medium hover:underline" style="color:var(--primary)">{ p.FilePath }</a>
-							<label class="ml-auto flex items-center gap-2 text-xs cursor-pointer" style="color:var(--on-surface-variant)">
+							<label class="ml-auto flex items-center gap-2 text-xs cursor-pointer text-gray-500">
 								<input type="checkbox" name="remove_file" value="1" class="accent-primary"/>
 								Kaldır
 							</label>
@@ -170,16 +170,16 @@ templ DayForm(p DayFormProps) {
 				</div>
 
 				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
-					<div class="text-xs font-semibold tracking-wider mb-4" style="color:var(--primary)">QUIZ AÇIKLAMASI</div>
+					<div class="text-xs font-semibold tracking-wider mb-4 text-blue-600 uppercase">QUIZ AÇIKLAMASI</div>
 					<textarea name="quiz_text" rows="4" placeholder="Kısa açıklama (opsiyonel)"
-						class="md3-outlined mono text-sm">{ p.QuizText }</textarea>
+						class="cs-input mono text-sm">{ p.QuizText }</textarea>
 				</div>
 
 				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
 					<div class="flex items-center justify-between mb-3">
 						<div class="text-xs font-semibold tracking-wider" style="color:var(--primary)">QUIZ SORULARI</div>
 						<button type="button" id="quiz-add-question"
-							class="btn-filled text-sm py-2 px-4 inline-flex items-center gap-1">
+							class="cs-btn-primary text-sm py-2 px-4 inline-flex items-center gap-1">
 							<span class="text-lg leading-none">+</span> SORU EKLE
 						</button>
 					</div>
@@ -194,18 +194,18 @@ templ DayForm(p DayFormProps) {
 					</details>
 					<div class="mt-6 pt-6 border-t flex items-center gap-3" style="border-color:var(--outline-variant)">
 						<button type="button" id="quiz-auto-translate"
-							class="btn-outlined text-sm py-2 px-4">
+							class="cs-btn-outline text-sm py-2 px-4">
 							OTOMATİK ÇEVİRİ
 						</button>
 						<span id="quiz-translate-status" class="text-xs hidden" style="color:var(--on-surface-variant)"></span>
 					</div>
 					<div id="quiz-translated-preview" class="mt-4 hidden space-y-3">
 						<div>
-							<div class="md3-label mb-2">İNGİLİZCE (EN) — ÖNİZLEME</div>
+							<div class="cs-label mb-2">İNGİLİZCE (EN) — ÖNİZLEME</div>
 							<pre id="quiz-en-preview" class="p-3 rounded-lg text-xs mono overflow-x-auto max-h-40" style="background:var(--surface-variant);color:var(--on-surface-variant)"></pre>
 						</div>
 						<div>
-							<div class="md3-label mb-2">BULGARCA (BG) — ÖNİZLEME</div>
+							<div class="cs-label mb-2">BULGARCA (BG) — ÖNİZLEME</div>
 							<pre id="quiz-bg-preview" class="p-3 rounded-lg text-xs mono overflow-x-auto max-h-40" style="background:var(--surface-variant);color:var(--on-surface-variant)"></pre>
 						</div>
 					</div>
@@ -218,27 +218,27 @@ templ DayForm(p DayFormProps) {
 						} else {
 							<input type="checkbox" name="published" value="1" class="w-4 h-4 accent-primary"/>
 						}
-						<span class="text-sm font-medium" style="color:var(--on-surface)">YAYINLA</span>
+						<span class="text-sm font-medium text-gray-900">YAYINLA</span>
 					</label>
 				</div>
 
 				<div class="pt-6 border-t" style="border-color:var(--outline-variant)">
 					<div class="text-xs font-semibold tracking-wider mb-3" style="color:var(--primary)">TRANSKRİPT (zaman damgalı)</div>
 					<textarea name="transcript" rows="6" placeholder="(00:00) Metin...&#10;(00:30) Metin devamı..."
-						class="md3-outlined mono text-sm">{ p.TranscriptText }</textarea>
+						class="cs-input mono text-sm">{ p.TranscriptText }</textarea>
 					<p class="mt-2 text-xs" style="color:var(--on-surface-variant)">Her satır başına (dk:sn) formatında zaman damgası koyun. Kaydedince otomatik VTT'ye çevrilir ve EN/BG'ye tercüme edilir.</p>
 				</div>
 
 				<div class="flex items-center gap-3 pt-6 border-t" style="border-color:var(--outline-variant)">
-					<button type="submit" class="btn-filled text-sm py-2.5 px-6">
+					<button type="submit" class="cs-btn-primary text-sm py-2.5 px-6">
 						KAYDET
 					</button>
-					<a href="/admin/days" class="btn-outlined text-sm py-2.5 px-6 no-underline">
+					<a href="/admin/days" class="cs-btn-outline text-sm py-2.5 px-6 no-underline">
 						İPTAL
 					</a>
 				</div>
 			</form>
-		</div>
+		</main>
 		<script>
 			(function() {
 				var btn = document.getElementById('quiz-auto-translate');

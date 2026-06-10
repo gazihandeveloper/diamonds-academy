@@ -1,127 +1,248 @@
 package pages
 
 import (
-	"github.com/diamondsacademy/diamonds/internal/days"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
+	"github.com/diamondsacademy/diamonds/internal/quiz"
+	"github.com/diamondsacademy/diamonds/internal/steps"
 	"github.com/diamondsacademy/diamonds/internal/views/components"
 	"github.com/diamondsacademy/diamonds/internal/views/layouts"
 )
 
 type DashboardProps struct {
-	Sidebar          components.SidebarProps
-	Days             []days.Day
-	CurrentDay       int
-	DayTitle         string
-	Bullets          []string
-	Description      string
-	CompletedDays    map[int]bool
-	CompletedQuizzes map[int]bool
-	AllCompleted     bool
-	Theme            string
+	Sidebar        components.SidebarProps
+	Steps          []steps.Step
+	CurrentStep    int
+	StepTitle      string
+	Bullets        []string
+	Description    string
+	StepCompleted  []bool
+	StepUnlocked   []bool
+	AllCompleted   bool
+	Theme          string
+	IsQuiz         bool
+	VideoURL       string
+	Slot           string
+	DayNo          int
+	Questions      []quiz.Question
+	UserEmail      string
 }
 
-func dayUnlocked(day int, completedQuizzes map[int]bool) bool {
-	if day <= 1 {
-		return true
+func stepUnlocked(idx int, unlocked []bool) bool {
+	if idx < 0 || idx >= len(unlocked) {
+		return false
 	}
-	return completedQuizzes[day-1]
+	return unlocked[idx]
+}
+
+func stepKind(isQuiz bool) string {
+	if isQuiz {
+		return "Quiz"
+	}
+	return "Video"
 }
 
 templ Dashboard(p DashboardProps) {
-	@layouts.Base(i18n.TC(ctx, "dashboard.page_title", itoa2(p.CurrentDay)), p.Theme) {
+	@layouts.Base(i18n.TC(ctx, "dashboard.page_title", itoa2(p.CurrentStep)), p.Theme) {
 		<div class="flex min-h-dynamic">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
-				<div class="flex items-start gap-2 md:gap-4 mb-6 md:mb-12 flex-wrap">
-					<div class="flex-1 border border-white/10 rounded-2xl p-3 md:p-4 bg-bg-panel/50 min-w-0 max-w-full">
-						<div class="flex flex-wrap items-center gap-1 md:gap-1.5 max-w-full">
-							for i, d := range p.Days {
+			<main class="flex-1 md:ml-64 p-3 md:p-8 pt-3 md:pt-8 pb-20 md:pb-8"
+				data-day-no={ itoa(p.DayNo) }
+				data-user-email={ p.UserEmail }
+				data-locale={ i18n.FromContext(ctx) }>
+				<!-- Logo header (adımların üstünde) -->
+				<div class="md:hidden flex items-center justify-between mb-4">
+					<a href="/" class="flex items-center gap-2">
+						@layouts.DiamondLogoSm()
+						<div class="leading-tight">
+							<div class="text-[10px] tracking-[0.2em] text-blue-600 font-bold">DIAMONDS</div>
+							<div class="text-[9px] tracking-[0.2em] text-gray-400">ACADEMY</div>
+						</div>
+					</a>
+					<button onclick="toggleTheme()" class="theme-toggle-btn" aria-label="Tema değiştir">
+						<svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+					</button>
+				</div>
+
+				<div class="mb-4 md:mb-8">
+					<div class="cs-card p-1.5 md:p-4">
+						<div class="flex items-center justify-center gap-0 md:gap-1.5">
+							for i, s := range p.Steps {
 								if i > 0 {
-									<span class="text-white/30 text-sm select-none">&rarr;</span>
+									<span class="text-gray-300 text-[10px] md:text-sm px-0 md:px-0.5 select-none shrink-0">→</span>
 								}
-						@dayButton(d.DayNo, p.CurrentDay, p.CompletedDays[d.DayNo], dayUnlocked(d.DayNo, p.CompletedQuizzes))
+								@stepButton(s.Number, p.CurrentStep, p.StepCompleted[i], stepUnlocked(i, p.StepUnlocked), s.Kind)
+							}
+							<span class="text-gray-300 text-[10px] md:text-sm px-0 md:px-0.5 select-none shrink-0">→</span>
+							@certificateStep(len(p.Steps)+1, p.AllCompleted)
+						</div>
+					</div>
+				</div>
+
+				<div class="cs-card p-4 md:p-10 max-w-5xl mx-auto">
+					<h1 class="text-lg md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">{ p.StepTitle }</h1>
+
+					// İçerik: kilitli / quiz / video
+					if p.CurrentStep-1 >= 0 && p.CurrentStep-1 < len(p.StepUnlocked) && !p.StepUnlocked[p.CurrentStep-1] {
+						@lockedBlock(p)
+					} else if p.IsQuiz {
+						@quizBlock(p)
+					} else {
+						@videoBlock(p.Slot, p.VideoURL)
+					}
+
+					// Sonraki adım butonu
+					if p.CurrentStep-1 >= 0 && p.CurrentStep-1 < len(p.StepCompleted) && p.StepCompleted[p.CurrentStep-1] {
+						<div class="mt-6 md:mt-8 flex justify-center">
+							if nextStep(p.Steps, p.CurrentStep) > 0 {
+								<a href={ templ.SafeURL("/?step=" + itoa(nextStep(p.Steps, p.CurrentStep))) } class="cs-btn-primary px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base">
+									Sonraki Adım →
+								</a>
+							}
+						</div>
 					}
 				</div>
-			</div>
-		if p.AllCompleted {
-			<a href="/certificate" class="border-2 border-brand rounded-xl p-3 bg-brand/10 hover:bg-brand/20 transition flex flex-col items-center gap-1 min-w-[80px] shrink-0">
-				<svg class="w-6 h-6 text-brand" fill="currentColor" viewBox="0 0 24 24">
-					<path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
-				</svg>
-				<span class="text-xs text-brand font-semibold">{ i18n.TC(ctx, "dashboard.certificate") }</span>
-			</a>
-		} else {
-			<span class="border-2 border-white/10 rounded-xl p-3 bg-white/5 flex flex-col items-center gap-1 min-w-[80px] cursor-not-allowed opacity-40 shrink-0" title={ i18n.TC(ctx, "dashboard.locked_tooltip") }>
-				<svg class="w-6 h-6 text-white/40" fill="currentColor" viewBox="0 0 24 24">
-					<path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/>
-				</svg>
-				<span class="text-xs text-white/40">{ i18n.TC(ctx, "dashboard.certificate") }</span>
-			</span>
-		}
-		</div>
-
-		<div class="card-glow rounded-2xl md:rounded-3xl p-6 md:p-12 border border-white/5 max-w-5xl mx-auto">
-			<h1 class="text-2xl md:text-4xl font-bold text-brand mb-4 md:mb-8">
-				{ i18n.TC(ctx, "dashboard.chapter") } { itoa2(p.CurrentDay) }: { p.DayTitle }
-			</h1>
-			<ul class="space-y-2 md:space-y-3 mb-6 md:mb-8 text-white/90 text-base md:text-lg">
-				for _, b := range p.Bullets {
-					<li class="flex items-center gap-3">
-						<span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-						{ b }
-					</li>
-				}
-			</ul>
-			<p class="text-white/80 leading-relaxed mb-12 max-w-4xl break-words">
-				{ p.Description }
-			</p>
-			<div class="flex justify-center">
-				if dayUnlocked(p.CurrentDay, p.CompletedQuizzes) {
-					<a href={ templ.SafeURL("/learn/" + itoa(p.CurrentDay)) } class="btn-primary px-10 py-4 rounded-xl font-bold text-base">
-						{ i18n.TC(ctx, "dashboard.start_chapter") }
-					</a>
-				} else {
-					<button disabled class="px-10 py-4 rounded-xl font-bold text-base border border-white/10 text-white/40 cursor-not-allowed bg-white/5">
-						{ i18n.TC(ctx, "dashboard.start_chapter") }
-					</button>
-				}
-			</div>
-		</div>
-
 			</main>
 		</div>
 	}
+}
+
+func nextStep(steps []steps.Step, current int) int {
+	for _, s := range steps {
+		if s.Number > current {
+			return s.Number
+		}
+	}
+	return 0
 }
 
 templ DashboardEmpty(sb components.SidebarProps, theme string) {
 	@layouts.Base(i18n.TC(ctx, "dashboard.page_title"), theme) {
 		<div class="flex min-h-dynamic">
 			@components.Sidebar(sb)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 flex items-center justify-center">
-				<div class="card-glow rounded-3xl p-6 md:p-12 border border-white/5 max-w-xl text-center">
-					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-4">{ i18n.TC(ctx, "dashboard.empty_title") }</h1>
-		<p class="text-white/70 mb-6 text-sm md:text-base">{ i18n.TC(ctx, "dashboard.empty_desc") }</p>
-		<a href="/admin/days/new" class="btn-primary px-6 py-3 rounded-xl font-bold inline-block">
-			{ i18n.TC(ctx, "dashboard.empty_cta") }
-		</a>
+			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-3 md:pt-8 pb-20 md:pb-8 flex items-center justify-center">
+				<div class="cs-card p-8 md:p-12 max-w-xl text-center">
+					<h1 class="text-xl font-bold text-gray-900 mb-4">{ i18n.TC(ctx, "dashboard.empty_title") }</h1>
+					<p class="text-gray-600 mb-6 text-sm">{ i18n.TC(ctx, "dashboard.empty_desc") }</p>
+					<a href="/admin/days/new" class="cs-btn-primary px-6 py-2.5 font-semibold inline-block">
+						{ i18n.TC(ctx, "dashboard.empty_cta") }
+					</a>
 				</div>
 			</main>
 		</div>
 	}
 }
 
-templ dayButton(day, current int, completed, unlocked bool) {
+templ stepButton(step, current int, completed, unlocked bool, kind string) {
 	if !unlocked {
-		<span class="day-btn locked w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/30 cursor-not-allowed bg-white/5" title={ i18n.TC(ctx, "dashboard.locked_tooltip") }>
+		<span class="cs-step-btn locked" title={ i18n.TC(ctx, "dashboard.locked_tooltip") }>
 			<svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" viewBox="0 0 24 24">
 				<path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/>
 			</svg>
 		</span>
-	} else if day == current {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn active w-8 h-8 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center text-xs sm:text-sm font-bold">{ itoa2(day) }</a>
+	} else if step == current {
+		<a href={ templ.SafeURL("/?step=" + itoa(step)) } class="cs-step-btn active">
+			if kind == "quiz" {
+				<span class="relative">{ itoa2(step) }<span class="absolute -top-1 -right-1.5 w-2 h-2 bg-orange-500 rounded-full"></span></span>
+			} else {
+				{ itoa2(step) }
+			}
+		</a>
 	} else if completed {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn completed w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-brand/40 text-brand flex items-center justify-center text-xs sm:text-sm font-semibold">{ itoa2(day) }</a>
+		<a href={ templ.SafeURL("/?step=" + itoa(step)) } class="cs-step-btn completed">{ itoa2(step) }</a>
 	} else {
-		<a href={ templ.SafeURL("/?day=" + itoa(day)) } class="day-btn w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/15 flex items-center justify-center text-xs sm:text-sm font-semibold">{ itoa2(day) }</a>
+		<a href={ templ.SafeURL("/?step=" + itoa(step)) } class="cs-step-btn">{ itoa2(step) }</a>
 	}
+}
+
+templ certificateStep(step int, allCompleted bool) {
+	if allCompleted {
+		<a href="/certificate" class="cs-step-btn completed" title="Sertifikanı al!">
+			<svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
+				<path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+			</svg>
+		</a>
+	} else {
+		<a href="/certificate" onclick="return confirm('Sertifika için tüm adımları tamamlamalısın!\n\nŞu anki ilerlemeni kontrol etmek ister misin?') || (window.location.href='/', false)" class="cs-step-btn opacity-50 hover:opacity-80" title="Tüm adımları tamamlayınca açılacak">
+			<svg class="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+				<path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+			</svg>
+		</a>
+	}
+}
+
+templ videoBlock(slot, url string) {
+	if url == "" {
+		<div class="aspect-video w-full bg-gray-100 border border-gray-300 flex items-center justify-center mb-6">
+			<div class="text-gray-400 text-base">{ i18n.TC(ctx, "learn.no_video") }</div>
+		</div>
+	} else {
+		<div data-diamonds-player data-slot={ slot } data-src={ url } data-locale={ i18n.FromContext(ctx) } class="w-full mb-6"></div>
+	}
+}
+
+templ quizBlock(p DashboardProps) {
+	if len(p.Questions) == 0 {
+		<div class="cs-locked mb-6">
+			<h2 class="text-lg font-bold text-gray-800 mb-4">{ i18n.TC(ctx, "learn.quiz_title", itoa2(p.CurrentStep)) }</h2>
+			<div class="text-gray-500 text-sm mb-6">{ i18n.TC(ctx, "learn.no_questions") }</div>
+			<button type="button" onclick="window.DiamondsFlow && window.DiamondsFlow.forceCompleteQuiz()"
+				class="cs-btn-primary px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base">{ i18n.TC(ctx, "learn.complete_chapter") }</button>
+		</div>
+	} else {
+		<div class="mb-4 text-center">
+			<h2 class="text-lg font-bold text-gray-800">{ i18n.TC(ctx, "learn.quiz_title", itoa2(p.CurrentStep)) }</h2>
+			<p class="text-sm text-gray-500 mt-1">{ i18n.TC(ctx, "learn.quiz_desc") }</p>
+		</div>
+		<form id="diamonds-quiz" class="space-y-4 max-w-3xl mx-auto mb-6" data-day-no={ itoa(p.DayNo) } data-step-no={ itoa(p.CurrentStep) }>
+			for i, q := range p.Questions {
+				@quizQuestion(i, q)
+			}
+			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+				<button type="submit" class="cs-btn-primary px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base">{ i18n.TC(ctx, "learn.submit_answers") }</button>
+				<div id="diamonds-quiz-feedback" class="text-sm font-semibold text-gray-600 text-center sm:text-left"></div>
+			</div>
+		</form>
+	}
+}
+
+templ quizQuestion(idx int, q quiz.Question) {
+	<div class="cs-card p-5 border border-gray-200" data-question-index={ itoa(idx) } data-correct={ itoa(q.Correct) }>
+		<h3 class="text-gray-900 font-semibold text-sm mb-3">{ itoa(idx+1) }. { q.Q }</h3>
+		<div class="space-y-2">
+			for j, opt := range q.Options {
+				<label class="cs-q-opt">
+					<input type="radio" name={ "q" + itoa(idx) } value={ itoa(j) }/>
+					<span>{ opt }</span>
+				</label>
+			}
+		</div>
+	</div>
+}
+
+templ lockedBlock(p DashboardProps) {
+	<div class="cs-locked mb-6">
+		<div class="w-12 h-12 mx-auto mb-4 rounded-full border border-gray-300 flex items-center justify-center">
+			<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
+		</div>
+		<h2 class="text-lg font-bold text-gray-800 mb-2">{ i18n.TC(ctx, "learn.locked_title") }</h2>
+		<p class="text-gray-500 text-sm mb-6">{ i18n.TC(ctx, "learn.locked_desc") }</p>
+		<a href={ templ.SafeURL("/?step=" + itoa(prevUnlockedStep(p.Steps, p.StepCompleted, p.CurrentStep))) } class="cs-btn-primary px-6 py-2.5">
+			{ i18n.TC(ctx, "learn.resume") }
+		</a>
+	</div>
+}
+
+func prevUnlockedStep(steps []steps.Step, completed []bool, current int) int {
+	best := 1
+	for i, s := range steps {
+		if s.Number >= current {
+			break
+		}
+		if i < len(completed) && !completed[i] {
+			best = s.Number
+			break
+		}
+		best = s.Number
+	}
+	return best
 }

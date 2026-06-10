@@ -50,7 +50,7 @@ func NewRouter(d Deps) http.Handler {
 	accessSvc := access.NewService(d.DB)
 	accessH := frontend.NewAccessHandler(d.SM, accessSvc)
 	adminAccessH := adm.NewAccessHandler(d.SM, accessSvc)
-	apiH := api.New(d.DB)
+	apiH := api.New(d.DB, d.SM)
 
 	// Public (auth gerektirmeyen)
 	web.Get("/login", authH.LoginGet)
@@ -75,7 +75,10 @@ func NewRouter(d Deps) http.Handler {
 
 			gated.Get("/", front.Dashboard)
 			gated.Get("/certificate", front.Certificate)
-			gated.Get("/learn/{dayNo}", front.Learn)
+			gated.Get("/learn/{stepNo}", func(w http.ResponseWriter, r *http.Request) {
+				stepNo := chi.URLParam(r, "stepNo")
+				http.Redirect(w, r, "/?step="+stepNo, http.StatusMovedPermanently)
+			})
 			gated.Post("/api/progress", front.ProgressBeat)
 			gated.Get("/api/progress/{dayNo}", front.ProgressForDay)
 			gated.Post("/api/slot-complete", front.MarkSlot)
@@ -102,6 +105,10 @@ func NewRouter(d Deps) http.Handler {
 			a.Post("/days/auto-translate", adminH.AutoTranslateQuiz)
 			a.Post("/days/fetch-transcript", adminH.FetchTranscript)
 			// Access code management
+			a.Get("/education-system", adminH.EducationSystem)
+			a.Post("/education-system/create", adminH.CreateStep)
+			a.Post("/education-system/edit", adminH.EditStep)
+			a.Post("/education-system/delete", adminH.DeleteStep)
 			a.Get("/access", adminAccessH.AccessList)
 			a.Post("/access/custom", adminAccessH.AccessCustom)
 			a.Post("/access/{id}/deactivate", adminAccessH.AccessDeactivate)

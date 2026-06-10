@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -130,24 +131,52 @@ func (h *Handler) QuizSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad json", http.StatusBadRequest)
 		return
 	}
-	d, err := h.Days.GetByDayNo(r.Context(), req.DayNo)
+
+	// Education steps'ten quiz'i bul
+	allSteps, err := h.EduSteps.List(r.Context())
 	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	var quizJSON string
+	for _, es := range allSteps {
+		if es.StepNo == req.DayNo && es.Kind == "quiz" {
+			quizJSON = es.QuizJSON
+			break
+		}
+	}
+	if quizJSON == "" {
 		http.NotFound(w, r)
 		return
 	}
+
 	locale := i18n.FromContext(r.Context())
-	qs := quiz.ParseForLocale(d.QuizJSON, d.QuizJSON_EN, d.QuizJSON_BG, locale)
+	qs := quiz.ParseForLocale(quizJSON, "", "", locale)
 	correct, total := quiz.Grade(qs, req.Answers)
 
-	// Her sorunun doğru index'i kullanıcıya da geri dönülür (öğrenme amaçlı).
 	correctIdx := make([]int, len(qs))
 	for i, q := range qs {
 		correctIdx[i] = q.Correct
 	}
 
-	passed := total > 0 && correct == total
+	passed := total > 0 && float64(correct)/float64(total) >= 0.70
+
+	// Quiz denemesini kaydet
+	if uid != 0 {
+		_, _ = h.DB.ExecContext(r.Context(),
+			`INSERT INTO quiz_attempts (user_id, step_no, score, total, passed) VALUES (?, ?, ?, ?, ?)`,
+			uid, req.DayNo, correct, total, boolToInt(passed))
+	}
+
 	if passed && uid != 0 {
 		_ = h.Progress.MarkComplete(r.Context(), uid, req.DayNo, "quiz")
+	} else if !passed && uid != 0 {
+		// Başarısız: önceki 3 adımın slot tamamlamalarını sıfırla (tekrar izleme zorunlu)
+		for i := req.DayNo - 3; i < req.DayNo; i++ {
+			if i >= 1 {
+				h.clearStepCompletion(r.Context(), uid, i)
+			}
+		}
 	}
 
 	writeJSON(w, map[string]any{
@@ -155,7 +184,19 @@ func (h *Handler) QuizSubmit(w http.ResponseWriter, r *http.Request) {
 		"total":    total,
 		"passed":   passed,
 		"answers":  correctIdx,
+		"needPct":  70,
 	})
+}
+
+// clearStepCompletion removes all slot_completion entries for a step, forcing re-watch.
+func (h *Handler) clearStepCompletion(ctx context.Context, uid int64, stepNo int) {
+	_, _ = h.DB.ExecContext(ctx,
+		`DELETE FROM slot_completion WHERE user_id = ? AND day_no = ?`, uid, stepNo)
+}
+
+func boolToInt(b bool) int {
+	if b { return 1 }
+	return 0
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

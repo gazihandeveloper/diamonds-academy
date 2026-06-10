@@ -9,17 +9,19 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/diamondsacademy/diamonds/internal/auth"
 	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/edusteps"
 	"github.com/diamondsacademy/diamonds/internal/views/pages"
 )
 
 type Handler struct {
-	SM   *scs.SessionManager
-	DB   *sql.DB
-	Days *days.Repo
+	SM       *scs.SessionManager
+	DB       *sql.DB
+	Days     *days.Repo
+	EduSteps *edusteps.Repo
 }
 
 func New(sm *scs.SessionManager, db *sql.DB) *Handler {
-	return &Handler{SM: sm, DB: db, Days: days.NewRepo(db)}
+	return &Handler{SM: sm, DB: db, Days: days.NewRepo(db), EduSteps: edusteps.NewRepo(db)}
 }
 
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +30,52 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	render(w, r, pages.Admin(pages.AdminProps{Users: users}))
+
+	// Toplam adım sayısı
+	totalSteps := h.EduSteps.Count(r.Context())
+
+	// Her kullanıcı için ilerleme hesapla
+	var rows []pages.AdminUserRow
+	for _, u := range users {
+		var done int
+		_ = h.DB.QueryRowContext(r.Context(),
+			`SELECT COUNT(DISTINCT day_no) FROM slot_completion WHERE user_id = ?`, u.ID).Scan(&done)
+
+		rows = append(rows, pages.AdminUserRow{
+			User:       u,
+			StepsDone:  done,
+			TotalSteps: totalSteps,
+			HasCert:    done >= totalSteps && totalSteps > 0,
+		})
+	}
+
+	cost, liveDS, totalCalls := deepseekCost(r.Context(), h.DB)
+	render(w, r, pages.Admin(pages.AdminProps{Users: users, TotalSteps: totalSteps, UserRows: rows,
+		OnlineCount:   countOnline(r.Context(), h.DB),
+		DeepseekCost:  cost,
+		DSLiveUsers:   liveDS,
+		DSTotalCalls:  totalCalls,
+	}))
+}
+
+func countOnline(ctx context.Context, db *sql.DB) int {
+	var n int
+	_ = db.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT user_id) FROM watch_progress WHERE updated_at > datetime('now', '-5 minutes')`).Scan(&n)
+	return n
+}
+
+func deepseekCost(ctx context.Context, db *sql.DB) (cost float64, liveUsers int, totalCalls int) {
+	var prompt, completion int
+	_ = db.QueryRowContext(ctx,
+		`SELECT COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0) FROM deepseek_usage`).Scan(&prompt, &completion)
+	cost = float64(prompt)*3.0/1000000 + float64(completion)*15.0/1000000
+
+	_ = db.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT user_id) FROM deepseek_usage WHERE created_at > datetime('now', '-5 minutes')`).Scan(&liveUsers)
+	_ = db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM deepseek_usage`).Scan(&totalCalls)
+	return
 }
 
 func listUsers(ctx context.Context, db *sql.DB) ([]auth.User, error) {

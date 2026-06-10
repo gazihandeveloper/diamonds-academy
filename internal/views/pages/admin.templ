@@ -5,76 +5,143 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/views/layouts"
 )
 
+type AdminUserRow struct {
+	User       auth.User
+	StepsDone  int
+	TotalSteps int
+	HasCert    bool
+}
+
 type AdminProps struct {
-	Users []auth.User
+	Users        []auth.User
+	TotalSteps   int
+	UserRows     []AdminUserRow
+	OnlineCount  int
+	DeepseekCost float64
+	DSLiveUsers  int
+	DSTotalCalls int
+}
+
+func progressPct2(done, total int) string {
+	if total <= 0 {
+		return "0%"
+	}
+	return itoa(int(float64(done)/float64(total)*100)) + "%"
+}
+
+func progressColor(done, total int) string {
+	if total <= 0 {
+		return "#d5dbdb"
+	}
+	pct := float64(done) / float64(total)
+	if pct >= 1 {
+		return "#037f0c"
+	}
+	if pct >= 0.5 {
+		return "#0972d3"
+	}
+	return "#e07806"
 }
 
 templ Admin(p AdminProps) {
 	@layouts.AdminBase("Genel Bakış", "overview") {
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-			@statCard("KULLANICILAR", itoa2(len(p.Users)), "toplam kayıtlı")
-			@statCard("AKTİF EĞİTİM",    "03",                "21 eğitim programı")
-		</div>
-
-		<section class="md3-card overflow-hidden">
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b" style="border-color:var(--outline-variant)">
-				<div>
-					<h2 class="text-base font-semibold" style="color:var(--on-surface)">Kullanıcılar</h2>
-					<p class="text-xs mt-0.5" style="color:var(--on-surface-variant)">SELECT * FROM users</p>
+		<main class="p-4 md:p-6 pt-16 md:pt-6">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+				<div class="cs-stat-card">
+					<div class="cs-stat-label">Kullanıcılar</div>
+					<div class="cs-stat-value">{ itoa2(len(p.Users)) }</div>
 				</div>
-				<button class="btn-filled text-sm py-2 px-5 w-full sm:w-auto">+ YENİ KULLANICI</button>
+				<div class="cs-stat-card">
+					<div class="cs-stat-label">Toplam Adım</div>
+					<div class="cs-stat-value">{ itoa2(p.TotalSteps) }</div>
+				</div>
+				<div class="cs-stat-card">
+					<div class="cs-stat-label">Sertifika Alan</div>
+					<div class="cs-stat-value" style="color:#037f0c">{ itoa2(certCount(p.UserRows)) }</div>
+				</div>
+				<div class="cs-stat-card">
+					<div class="cs-stat-label flex items-center gap-2">
+						Canlı İzleyen
+						<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+					</div>
+					<div class="cs-stat-value" style="color:#0972d3">{ itoa2(p.OnlineCount) }</div>
+				</div>
+				<div class="cs-stat-card">
+					<div class="cs-stat-label flex items-center gap-2">
+						🤖 DeepSeek API
+						<span class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+					</div>
+					<div class="cs-stat-value" style="color:#7c3aed">${ fmtCost(p.DeepseekCost) }</div>
+					<div class="text-xs text-gray-400 mt-1">
+						{ itoa2(p.DSLiveUsers) } canlı · { itoa2(p.DSTotalCalls) } çağrı
+					</div>
+				</div>
 			</div>
-			<div class="overflow-x-auto">
-			<table class="md3-table">
-				<thead>
-					<tr>
-				<th class="px-6">ID</th>
-				<th class="px-6">E-posta</th>
-				<th class="px-6">İsim</th>
-				<th class="px-6">Telefon</th>
-				<th class="px-6">Rol</th>
-				<th class="px-6">Kayıt</th>
-					</tr>
-				</thead>
-				<tbody>
-					if len(p.Users) == 0 {
-						<tr>
-							<td colspan="6" class="px-6 py-10 text-center text-sm" style="color:var(--on-surface-variant)">
-								Henüz kayıtlı kullanıcı yok.
-							</td>
-						</tr>
-					}
-					for _, u := range p.Users {
-						<tr>
-							<td class="px-6 mono text-sm" style="color:var(--on-surface-variant)">{ itoa2(int(u.ID)) }</td>
-							<td class="px-6" style="color:var(--on-surface)">{ u.Email }</td>
-			<td class="px-6" style="color:var(--on-surface)">{ u.Name }</td>
-			<td class="px-6 mono text-xs" style="color:var(--on-surface-variant)">{ u.Phone }</td>
-			<td class="px-6">
-								@roleBadge(string(u.Role))
-							</td>
-							<td class="px-6 mono text-xs" style="color:var(--on-surface-variant)">{ u.CreatedAt.Format("2006-01-02 15:04") }</td>
-						</tr>
-					}
-				</tbody>
-			</table>
+
+			<div class="cs-card">
+				<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+					<div>
+						<h2 class="text-sm font-semibold text-gray-900">Kullanıcı İlerlemeleri</h2>
+						<p class="text-xs text-gray-500 mt-0.5">Adım tamamlama ve sertifika durumu</p>
+					</div>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="cs-table">
+						<thead>
+							<tr>
+								<th>Kullanıcı</th><th>İlerleme</th><th>Sertifika</th><th>Kayıt</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(p.UserRows) == 0 {
+								<tr><td colspan="4" class="text-center text-gray-400 py-10">Henüz kayıtlı kullanıcı yok.</td></tr>
+							}
+							for _, r := range p.UserRows {
+								<tr>
+									<td class="font-medium">{ r.User.Name }</td>
+									<td>
+										<div class="flex items-center gap-2">
+											<div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden max-w-[120px]">
+												<div class="h-full rounded-full transition-all" style={ "width:"+progressPct2(r.StepsDone, r.TotalSteps)+";background:"+progressColor(r.StepsDone, r.TotalSteps) }></div>
+											</div>
+											<span class="text-xs text-gray-600">{ itoa2(r.StepsDone) }/{ itoa2(r.TotalSteps) }</span>
+										</div>
+									</td>
+									<td>
+										if r.HasCert {
+											<span class="cs-badge cs-badge-green">🏆 Sertifika Aldı</span>
+										} else {
+											<span class="cs-badge cs-badge-gray">Devam Ediyor</span>
+										}
+									</td>
+									<td class="text-gray-400 text-xs">{ r.User.CreatedAt.Format("2006-01-02") }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
 			</div>
-		</section>
+		</main>
 	}
 }
 
-templ statCard(label, value, hint string) {
-	<div class="md3-card p-4 sm:p-5">
-		<div class="mono text-[11px] tracking-[0.1em] font-semibold" style="color:var(--primary)">{ label }</div>
-		<div class="text-2xl sm:text-3xl font-semibold mt-2" style="color:var(--on-surface)">{ value }</div>
-		<div class="text-xs mt-1" style="color:var(--on-surface-variant)">{ hint }</div>
-	</div>
+func certCount(rows []AdminUserRow) int {
+	n := 0
+	for _, r := range rows {
+		if r.HasCert {
+			n++
+		}
+	}
+	return n
 }
 
-templ roleBadge(role string) {
-	if role == "admin" {
-		<span class="md3-badge" style="background:var(--primary-container);color:var(--on-primary-container)">ADMIN</span>
-	} else {
-		<span class="md3-badge" style="background:var(--surface-variant);color:var(--on-surface-variant)">USER</span>
+func fmtCost(c float64) string {
+	if c < 0.01 {
+		return "0.01"
 	}
+	s := itoa(int(c*100))
+	if len(s) == 1 {
+		return "0.0" + s
+	}
+	return s[:len(s)-2] + "." + s[len(s)-2:]
 }

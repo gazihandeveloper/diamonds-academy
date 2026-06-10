@@ -6,13 +6,16 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/alexedwards/scs/v2"
 )
 
 type Handler struct {
 	DB *sql.DB
+	SM *scs.SessionManager
 }
 
-func New(db *sql.DB) *Handler { return &Handler{DB: db} }
+func New(db *sql.DB, sm *scs.SessionManager) *Handler { return &Handler{DB: db, SM: sm} }
 
 type healthResponse struct {
 	Status string    `json:"status"`

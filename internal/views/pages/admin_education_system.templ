@@ -1,0 +1,335 @@
+package pages
+
+import "github.com/diamondsacademy/diamonds/internal/views/layouts"
+
+type EducationStep struct {
+	ID       int64
+	DayNo    int
+	Title    string
+	Kind     string
+	URL      string
+	QuizJSON string
+}
+
+type AdminEducationSystemProps struct {
+	Steps []EducationStep
+}
+
+func stepBg(kind string) string {
+	if kind == "video" { return "#eff6ff" }
+	return "#fff7ed"
+}
+func stepBorder(kind string) string {
+	if kind == "video" { return "border-blue-200" }
+	return "border-amber-200"
+}
+func stepBadge(kind string) string {
+	if kind == "video" { return "cs-badge cs-badge-blue" }
+	return "cs-badge cs-badge-green"
+}
+
+templ AdminEducationSystem(p AdminEducationSystemProps) {
+	@layouts.AdminBase("Eğitim Sistemi", "education-system") {
+		<main class="p-4 md:p-6 pt-16 md:pt-6">
+			<div class="flex items-center justify-between mb-6">
+				<div>
+					<h1 class="text-lg font-bold text-gray-900">Eğitim Sistemi</h1>
+					<p class="text-xs text-gray-500 mt-1">Adım adım içerikleri buradan yönetin</p>
+				</div>
+				<button onclick="openModal()" class="cs-btn-primary">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+					Yeni Adım Ekle
+				</button>
+			</div>
+
+			if len(p.Steps) == 0 {
+				<div class="cs-card p-16 text-center">
+					<svg class="w-12 h-12 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+					<p class="text-gray-400 text-sm">Henüz hiç adım eklenmedi.</p>
+					<p class="text-gray-300 text-xs mt-1">"Yeni Adım Ekle" butonu ile başlayın.</p>
+				</div>
+			}
+			if len(p.Steps) > 0 {
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+					for _, s := range p.Steps {
+						<div class="group relative bg-white border rounded-xl overflow-hidden transition-shadow hover:shadow-md { stepBorder(s.Kind) }" data-quiz={ s.QuizJSON }>
+							<div class="absolute top-0 left-0 w-full h-1" style={ backgroundForKind(s.Kind) }></div>
+							<div class="p-5 pt-6">
+								<div class="flex items-start justify-between mb-3">
+									<div class="flex items-center gap-3">
+										<span class="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={ backgroundForKind(s.Kind) }>
+											if s.Kind == "video" {
+												🎬
+											} else {
+												❓
+											}
+										</span>
+										<span class={ stepBadge(s.Kind) }>
+											if s.Kind == "video" {
+												Video
+											} else {
+												Quiz
+											}
+										</span>
+									</div>
+									<div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+										<button data-edit={ itoa(int(s.ID)) } class="step-edit-btn p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition" title="Düzenle">
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+										</button>
+										<button data-delete={ itoa(int(s.ID)) } class="step-delete-btn p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="Sil">
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+										</button>
+									</div>
+								</div>
+								<h3 class="text-sm font-semibold text-gray-900 mb-2 line-clamp-2">{ s.Title }</h3>
+								if s.URL != "" {
+									<p class="text-xs text-gray-400 truncate">{ s.URL }</p>
+								}
+							</div>
+						</div>
+					}
+				</div>
+			}
+
+			<div class="mt-8 cs-card p-4">
+				<p class="text-xs text-gray-500">Toplam <strong>{ itoa2(len(p.Steps)) }</strong> adım.</p>
+			</div>
+		</main>
+
+		// ============ MODAL ============
+		<div id="step-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-start justify-center p-4 pt-10 overflow-y-auto" onclick="closeModal(event)">
+			<div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8" onclick="event.stopPropagation()">
+				<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl z-10">
+					<h2 id="modal-title" class="text-base font-bold text-gray-900">Yeni Adım Ekle</h2>
+					<button onclick="closeModal()" class="p-1 rounded hover:bg-gray-100 transition">
+						<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+					</button>
+				</div>
+				<div class="p-6 space-y-5">
+					// Tür seçimi
+					<div>
+						<label class="cs-label mb-3">Adım türü</label>
+						<div class="grid grid-cols-2 gap-3">
+							<label class="kind-opt flex items-center gap-3 p-4 border border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+								<input type="radio" name="step-kind" value="video" checked class="accent-blue-600" onchange="onKindChange()"/>
+								<div><div class="text-sm font-semibold text-gray-900">🎬 Video</div><div class="text-xs text-gray-400">YouTube / MP4</div></div>
+							</label>
+							<label class="kind-opt flex items-center gap-3 p-4 border border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+								<input type="radio" name="step-kind" value="quiz" class="accent-blue-600" onchange="onKindChange()"/>
+								<div><div class="text-sm font-semibold text-gray-900">❓ Quiz</div><div class="text-xs text-gray-400">Soru-cevap</div></div>
+							</label>
+						</div>
+					</div>
+
+					<div id="step-title-field">
+						<label class="cs-label">Başlık</label>
+						<input type="text" id="step-title" placeholder="örn: İlk Sipariş Nasıl Verilir?" class="cs-input"/>
+					</div>
+					<div id="step-url-field">
+						<label class="cs-label">Video Linki</label>
+						<input type="url" id="step-url" placeholder="https://youtube.com/..." class="cs-input"/>
+					</div>
+
+					// Quiz bölümü
+					<div id="step-quiz-field" class="hidden">
+						<div class="flex items-center justify-between mb-3">
+							<label class="cs-label mb-0">Quiz Soruları</label>
+							<button type="button" onclick="addQuestion()" class="cs-btn-outline text-xs py-1.5 px-3">
+								<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Soru Ekle
+							</button>
+						</div>
+						<div id="quiz-questions-container" class="space-y-4"></div>
+						<p class="text-xs text-gray-400 mt-2" id="quiz-count">Henüz soru eklenmedi.</p>
+					</div>
+
+					<div id="modal-error" class="cs-alert cs-alert-error hidden"></div>
+					<input type="hidden" id="edit-id" value=""/>
+
+					<div class="flex gap-3 pt-2 border-t border-gray-100">
+						<button onclick="closeModal()" class="cs-btn-outline flex-1">İptal</button>
+						<button onclick="saveStep()" class="cs-btn-primary flex-1">Kaydet</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// ============ SCRIPTS ============
+		<script>
+		var EDITING_ID = '';
+		var questions = [];
+
+		function openModal(editData) {
+			var overlay = document.getElementById('step-modal-overlay');
+			overlay.classList.remove('hidden');
+			overlay.classList.add('flex');
+			resetModal();
+			if (editData) {
+				EDITING_ID = editData.id;
+				document.getElementById('modal-title').textContent = 'Adım Düzenle';
+				document.getElementById('edit-id').value = editData.id;
+				document.getElementById('step-title').value = editData.title || '';
+				document.getElementById('step-url').value = editData.url || '';
+				var kind = editData.kind || 'video';
+				document.querySelector('input[name="step-kind"][value="'+kind+'"]').checked = true;
+				onKindChange();
+				if (editData.questions && editData.questions.length > 0) {
+					questions = editData.questions;
+					renderQuestions();
+				}
+			} else {
+				EDITING_ID = '';
+				document.getElementById('modal-title').textContent = 'Yeni Adım Ekle';
+				document.getElementById('edit-id').value = '';
+				questions = [];
+				renderQuestions();
+			}
+		}
+
+		function closeModal(e) {
+			if (e && e.target !== document.getElementById('step-modal-overlay')) return;
+			var overlay = document.getElementById('step-modal-overlay');
+			overlay.classList.add('hidden');
+			overlay.classList.remove('flex');
+		}
+
+		function resetModal() {
+			document.getElementById('step-title').value = '';
+			document.getElementById('step-url').value = '';
+			document.querySelector('input[name="step-kind"][value="video"]').checked = true;
+			document.getElementById('modal-error').classList.add('hidden');
+			questions = [];
+			renderQuestions();
+			onKindChange();
+		}
+
+		function onKindChange() {
+			var kind = document.querySelector('input[name="step-kind"]:checked').value;
+			var titleLabel = document.querySelector('#step-title-field .cs-label');
+			if (kind === 'video') {
+				document.getElementById('step-url-field').classList.remove('hidden');
+				document.getElementById('step-quiz-field').classList.add('hidden');
+				titleLabel.textContent = 'Video Başlığı';
+			} else {
+				document.getElementById('step-url-field').classList.add('hidden');
+				document.getElementById('step-quiz-field').classList.remove('hidden');
+				titleLabel.textContent = 'Quiz Başlığı';
+			}
+		}
+
+		// Quiz question management
+		function addQuestion() {
+			questions.push({q: '', options: ['','','',''], correct: 0});
+			renderQuestions();
+		}
+
+		function removeQuestion(idx) {
+			questions.splice(idx, 1);
+			renderQuestions();
+		}
+
+		function renderQuestions() {
+			var container = document.getElementById('quiz-questions-container');
+			var countEl = document.getElementById('quiz-count');
+			if (!container) return;
+			if (questions.length === 0) {
+				container.innerHTML = '';
+				if (countEl) countEl.textContent = 'Henüz soru eklenmedi.';
+				return;
+			}
+			if (countEl) countEl.textContent = questions.length + ' soru';
+			var html = '';
+			for (var i = 0; i < questions.length; i++) {
+				var q = questions[i];
+				html += '<div class="border border-gray-200 rounded-lg p-4 bg-gray-50">';
+				html += '<div class="flex items-start justify-between mb-3">';
+				html += '<span class="text-xs font-bold text-gray-500">Soru '+(i+1)+'</span>';
+				html += '<button onclick="removeQuestion('+i+')" class="text-gray-400 hover:text-red-500 text-xs">✕</button>';
+				html += '</div>';
+				html += '<input type="text" class="cs-input mb-3 q-text" data-idx="'+i+'" value="'+escHtml(q.q)+'" placeholder="Soru metni...">';
+				html += '<div class="grid grid-cols-2 gap-2 mb-3">';
+				for (var j = 0; j < 4; j++) {
+					html += '<div class="flex items-center gap-2">';
+					html += '<input type="radio" name="q-correct-'+i+'" value="'+j+'" '+(q.correct===j?'checked':'')+' class="accent-green-600 q-correct" data-q="'+i+'" data-idx="'+j+'">';
+					html += '<input type="text" class="cs-input text-xs q-opt" data-q="'+i+'" data-idx="'+j+'" value="'+escHtml(q.options[j]||'')+'" placeholder="Seçenek '+(j+1)+'">';
+					html += '</div>';
+				}
+				html += '</div>';
+				html += '</div>';
+			}
+			container.innerHTML = html;
+		}
+
+		function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+		function collectQuizJSON() {
+			for (var i = 0; i < questions.length; i++) {
+				var textEl = document.querySelector('.q-text[data-idx="'+i+'"]');
+				if (textEl) questions[i].q = textEl.value;
+				for (var j = 0; j < 4; j++) {
+					var optEl = document.querySelector('.q-opt[data-q="'+i+'"][data-idx="'+j+'"]');
+					if (optEl) questions[i].options[j] = optEl.value;
+				}
+				var correctEl = document.querySelector('input[name="q-correct-'+i+'"]:checked');
+				if (correctEl) questions[i].correct = parseInt(correctEl.value);
+			}
+			return JSON.stringify(questions);
+		}
+
+		async function saveStep() {
+			var kind = document.querySelector('input[name="step-kind"]:checked').value;
+			var title = document.getElementById('step-title').value.trim();
+			var url = document.getElementById('step-url').value.trim();
+			var id = document.getElementById('edit-id').value;
+			var errEl = document.getElementById('modal-error');
+
+			if (!title) { errEl.textContent = 'Başlık zorunlu.'; errEl.classList.remove('hidden'); return; }
+			if (kind === 'video' && !url) { errEl.textContent = 'Link zorunlu.'; errEl.classList.remove('hidden'); return; }
+			errEl.classList.add('hidden');
+
+			var body = {title: title, kind: kind, url: url};
+			if (kind === 'quiz') {
+				body.quiz_json = collectQuizJSON();
+			}
+			var endpoint = '/admin/education-system/create';
+			if (id) { endpoint = '/admin/education-system/edit'; body.id = parseInt(id, 10); }
+
+			try {
+				var res = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+				var data = await res.json();
+				if (data.ok) window.location.reload();
+				else { errEl.textContent = data.error || 'Hata.'; errEl.classList.remove('hidden'); }
+			} catch(e) { errEl.textContent = 'Bağlantı hatası.'; errEl.classList.remove('hidden'); }
+		}
+
+		// Delete
+		document.addEventListener('click', function(e) {
+			var btn = e.target.closest('.step-delete-btn');
+			if (!btn) return;
+			var id = parseInt(btn.dataset.delete, 10);
+			if (!id || !confirm('Bu adımı silmek istediğinize emin misiniz?')) return;
+			fetch('/admin/education-system/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})})
+				.then(function(r){ if(r.ok) window.location.reload(); });
+		});
+
+		// Edit
+		document.addEventListener('click', function(e) {
+			var btn = e.target.closest('.step-edit-btn');
+			if (!btn) return;
+			var id = btn.dataset.edit;
+			var card = btn.closest('.group');
+			var title = card.querySelector('h3')?.textContent || '';
+			var urlEl = card.querySelector('p.text-xs');
+			var url = urlEl ? urlEl.textContent : '';
+			var kind = card.querySelector('.cs-badge-blue') ? 'video' : 'quiz';
+			var qData = [];
+			try { var raw = card.getAttribute('data-quiz') || card.dataset.quiz; if (raw) qData = JSON.parse(raw); } catch(e) {}
+			openModal({id: id, title: title, url: url, kind: kind, questions: qData});
+		});
+	</script>
+	}
+}
+
+func backgroundForKind(kind string) string {
+	if kind == "video" { return "#0972d3" }
+	return "#e07806"
+}

@@ -21,20 +21,18 @@ templ Profile(p ProfileProps) {
 	@layouts.Base(i18n.TC(ctx, "profile.page_title"), p.Theme) {
 		<div class="flex min-h-dynamic">
 			@components.Sidebar(p.Sidebar)
-			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+			<main class="flex-1 md:ml-64 p-4 md:p-8 pt-3 md:pt-8 pb-20 md:pb-8">
 				<div class="max-w-2xl mx-auto">
-					<h1 class="text-2xl md:text-3xl font-bold text-brand mb-6 md:mb-8">{ i18n.TC(ctx, "profile.title") }</h1>
+					<h1 class="text-xl font-bold text-gray-900 mb-6">{ i18n.TC(ctx, "profile.title") }</h1>
 
-					<div class="card-glow rounded-2xl md:rounded-3xl p-6 md:p-10 border border-white/5 space-y-6 md:space-y-8">
-						<div class="flex items-center gap-4 md:gap-6 pb-6 md:pb-8 border-b border-white/5">
-							<div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-brand/20 border-2 border-brand/50 flex items-center justify-center">
-								<span class="text-2xl md:text-3xl font-bold text-brand">
-									{ initials(p.User.Name) }
-								</span>
+					<div class="cs-card p-6 md:p-10 space-y-6">
+						<div class="flex items-center gap-4 pb-6 border-b border-gray-200">
+							<div class="w-16 h-16 rounded-full bg-blue-100 border-2 border-blue-600 flex items-center justify-center">
+								<span class="text-xl font-bold text-blue-700">{ initials(p.User.Name) }</span>
 							</div>
 							<div>
-								<h2 class="text-xl md:text-2xl font-bold text-white">{ p.User.Name }</h2>
-								<p class="text-brand/80 text-sm">
+								<h2 class="text-lg font-bold text-gray-900">{ p.User.Name }</h2>
+								<p class="text-blue-600 text-sm font-medium">
 									if p.User.Role == auth.RoleAdmin {
 										{ i18n.TC(ctx, "profile.admin") }
 									} else {
@@ -44,7 +42,7 @@ templ Profile(p ProfileProps) {
 							</div>
 						</div>
 
-						<div class="grid grid-cols-1 gap-4">
+						<div class="space-y-2">
 							@infoRow(i18n.TC(ctx, "profile.name"), p.User.Name)
 							@infoRow(i18n.TC(ctx, "profile.email"), p.User.Email)
 							if p.User.Phone != "" {
@@ -53,16 +51,16 @@ templ Profile(p ProfileProps) {
 							@infoRow(i18n.TC(ctx, "profile.registered"), p.User.CreatedAt.Format("02.01.2006"))
 						</div>
 
-						<div class="pt-6 md:pt-8 border-t border-white/5">
-							<h3 class="text-sm font-semibold text-white/60 mb-4">{ i18n.TC(ctx, "profile.progress") }</h3>
-							<div class="flex gap-6 md:gap-8">
+						<div class="pt-6 border-t border-gray-200">
+							<h3 class="text-sm font-semibold text-gray-500 mb-4">{ i18n.TC(ctx, "profile.progress") }</h3>
+							<div class="flex gap-8">
 								<div class="text-center">
-									<div class="text-2xl md:text-3xl font-bold text-brand">{ itoa2(p.DaysCompleted) }</div>
-									<div class="text-xs text-white/40 mt-1">{ i18n.TC(ctx, "profile.days_completed") }</div>
+									<div class="text-2xl font-bold text-blue-600">{ itoa2(p.DaysCompleted) }</div>
+									<div class="text-xs text-gray-400 mt-1">{ i18n.TC(ctx, "profile.days_completed") }</div>
 								</div>
 								<div class="text-center">
-									<div class="text-2xl md:text-3xl font-bold text-brand">{ itoa2(p.SlotsCompleted) }</div>
-									<div class="text-xs text-white/40 mt-1">{ i18n.TC(ctx, "profile.slots_completed") }</div>
+									<div class="text-2xl font-bold text-blue-600">{ itoa2(p.SlotsCompleted) }</div>
+									<div class="text-xs text-gray-400 mt-1">{ i18n.TC(ctx, "profile.slots_completed") }</div>
 								</div>
 							</div>
 						</div>
@@ -74,9 +72,9 @@ templ Profile(p ProfileProps) {
 }
 
 templ infoRow(label, value string) {
-	<div class="flex items-center justify-between py-3 px-4 rounded-xl border border-white/5 bg-white/[0.02]">
-		<span class="text-sm text-white/50">{ label }</span>
-		<span class="text-sm text-white font-medium">{ value }</span>
+	<div class="flex items-center justify-between py-2.5 px-4 bg-gray-50 border border-gray-200">
+		<span class="text-sm text-gray-500">{ label }</span>
+		<span class="text-sm text-gray-900 font-medium">{ value }</span>
 	</div>
 }
 

@@ -7,14 +7,15 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/alexedwards/scs/v2"
-	"github.com/go-chi/chi/v5"
 
 	"github.com/diamondsacademy/diamonds/internal/auth"
 	"github.com/diamondsacademy/diamonds/internal/days"
+	"github.com/diamondsacademy/diamonds/internal/edusteps"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/progress"
 	"github.com/diamondsacademy/diamonds/internal/quiz"
 	"github.com/diamondsacademy/diamonds/internal/session"
+	"github.com/diamondsacademy/diamonds/internal/steps"
 	"github.com/diamondsacademy/diamonds/internal/views/components"
 	"github.com/diamondsacademy/diamonds/internal/views/pages"
 )
@@ -23,12 +24,13 @@ type Handler struct {
 	SM       *scs.SessionManager
 	DB       *sql.DB
 	Days     *days.Repo
+	EduSteps *edusteps.Repo
 	Progress *progress.Repo
 	AuthSvc  *auth.Service
 }
 
 func New(sm *scs.SessionManager, db *sql.DB, authSvc *auth.Service) *Handler {
-	return &Handler{SM: sm, DB: db, Days: days.NewRepo(db), Progress: progress.NewRepo(db), AuthSvc: authSvc}
+	return &Handler{SM: sm, DB: db, Days: days.NewRepo(db), EduSteps: edusteps.NewRepo(db), Progress: progress.NewRepo(db), AuthSvc: authSvc}
 }
 
 // sidebarFromSession builds sidebar props from session data.
@@ -45,68 +47,125 @@ func (h *Handler) sidebarFromSession(r *http.Request) components.SidebarProps {
 }
 
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	all, err := h.Days.List(r.Context())
+	eduList, err := h.EduSteps.List(r.Context())
 	if err != nil {
 		http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Sadece yayınlanmış eğitimler dashboard'da görünür
-	published := make([]days.Day, 0, len(all))
-	for _, d := range all {
-		if d.Published {
-			published = append(published, d)
-		}
-	}
-
-	total := len(published)
-	if total == 0 {
+	if len(eduList) == 0 {
 		render(w, r, pages.DashboardEmpty(h.sidebarFromSession(r), ""))
 		return
 	}
 
-	// ?day=N ile aktif eğitim seçimi (yoksa ilk tamamlanmamış eğitim)
-	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
-	completedQuizzes, _ := h.Progress.CompletedQuizzes(r.Context(), uid)
-	completedDays, _ := h.Progress.CompletedDays(r.Context(), uid)
+	// education_steps → steps.Step dönüşümü
+	stepList := make([]steps.Step, 0, len(eduList))
+	for _, es := range eduList {
+		slot := "l1"
+		videoURL := es.VideoURL
+		if es.Kind == "quiz" {
+			slot = "quiz"
+			videoURL = ""
+		}
+		stepList = append(stepList, steps.Step{
+			Number:   es.StepNo,
+			DayNo:    es.StepNo, // progress için step_no = day_no
+			Slot:     slot,
+			Kind:     es.Kind,
+			VideoURL: videoURL,
+			Title:    es.Title,
+		})
+	}
 
-	current := published[0]
-	// İlk tamamlanmamış eğitim varsayılan
-	for _, d := range published {
-		if !completedDays[d.DayNo] {
-			current = d
+	// Tamamlanma durumu (step_no'yu day_no olarak kullan)
+	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
+	allSlots, _ := h.Progress.AllCompletedSlots(r.Context(), uid)
+
+	stepCompleted := make([]bool, len(stepList))
+	firstUnfinished := 0
+	for i, s := range stepList {
+		if m, ok := allSlots[s.DayNo]; ok && m[s.Slot] {
+			stepCompleted[i] = true
+		} else if firstUnfinished == 0 {
+			firstUnfinished = s.Number
+		}
+	}
+
+	stepUnlocked := make([]bool, len(stepList))
+	for i := range stepList {
+		if i == 0 {
+			stepUnlocked[i] = true
+		} else {
+			stepUnlocked[i] = stepCompleted[i-1]
+		}
+	}
+
+	currentStep := stepList[0].Number
+	if firstUnfinished > 0 {
+		currentStep = firstUnfinished
+	}
+	if q := r.URL.Query().Get("step"); q != "" {
+		if n, err := strconv.Atoi(q); err == nil && n >= 1 && n <= len(stepList) {
+			// Sadece unlock edilmiş veya mevcut adıma izin ver
+			idx := n - 1
+			if idx >= 0 && idx < len(stepUnlocked) && stepUnlocked[idx] {
+				currentStep = n
+			}
+		}
+	}
+
+	allCompleted := true
+	for _, c := range stepCompleted {
+		if !c {
+			allCompleted = false
 			break
 		}
 	}
-	if q := r.URL.Query().Get("day"); q != "" {
-		if n, err := strconv.Atoi(q); err == nil {
-			for _, d := range published {
-				if d.DayNo == n {
-					current = d
+
+	// Şu anki adımı bul
+	currStep := steps.FindByNumber(stepList, currentStep)
+	stepTitle := ""
+	isQuiz := false
+	videoURL := ""
+	slot := ""
+	dayNo := 0
+	var questions []quiz.Question
+
+	if currStep != nil {
+		stepTitle = currStep.Title
+		isQuiz = currStep.Kind == "quiz"
+		videoURL = currStep.VideoURL
+		slot = currStep.Slot
+		dayNo = currStep.DayNo
+
+		if isQuiz {
+			// Education steps'ten quiz JSON'ını bul
+			for _, es := range eduList {
+				if es.StepNo == currentStep {
+					locale := i18n.FromContext(r.Context())
+					questions = quiz.ParseForLocale(es.QuizJSON, "", "", locale)
 					break
 				}
 			}
 		}
 	}
 
-	allCompleted := total > 0
-	for _, d := range published {
-		if !completedDays[d.DayNo] {
-			allCompleted = false
-			break
-		}
-	}
-
 	render(w, r, pages.Dashboard(pages.DashboardProps{
-		Sidebar:          h.sidebarFromSession(r),
-		Days:             published,
-		CurrentDay:       current.DayNo,
-		DayTitle:         localizedDayTitle(current, r),
-		Bullets:          localizedBullets(current, r),
-		Description:      localizedDescription(current, r),
-		CompletedDays:    completedDays,
-		CompletedQuizzes: completedQuizzes,
-		AllCompleted:     allCompleted,
+		Sidebar:        h.sidebarFromSession(r),
+		Steps:          stepList,
+		CurrentStep:    currentStep,
+		StepTitle:      stepTitle,
+		Bullets:        []string{},
+		Description:    "",
+		StepCompleted:  stepCompleted,
+		StepUnlocked:   stepUnlocked,
+		AllCompleted:   allCompleted,
+		IsQuiz:         isQuiz,
+		VideoURL:       videoURL,
+		Slot:           slot,
+		DayNo:          dayNo,
+		Questions:      questions,
+		UserEmail:      h.SM.GetString(r.Context(), session.KeyEmail),
 	}))
 }
 
@@ -158,58 +217,6 @@ func localizedDescription(d days.Day, r *http.Request) string {
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = c.Render(r.Context(), w)
-}
-
-func (h *Handler) Learn(w http.ResponseWriter, r *http.Request) {
-	dayNo, _ := strconv.Atoi(chi.URLParam(r, "dayNo"))
-	d, err := h.Days.GetByDayNo(r.Context(), dayNo)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	tab := r.URL.Query().Get("tab")
-	switch tab {
-	case "l1", "l2", "l3", "file", "quiz":
-	default:
-		tab = "l1"
-	}
-
-	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
-
-	// Bir sonraki eğitime geçmek için önceki eğitimin quiz'i %100 tamamlanmış olmalı
-	// Eğitim 1 ve anon kullanıcı hariç.
-	if uid != 0 && dayNo > 1 {
-		qDone, _ := h.Progress.QuizCompleted(r.Context(), uid, dayNo-1)
-		if !qDone {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-	}
-
-	completed, _ := h.Progress.CompletedSlots(r.Context(), uid, dayNo)
-
-	// Tüm slotlar her zaman açık — sıralı kilit yok.
-	locale := i18n.FromContext(r.Context())
-	questions := quiz.ParseForLocale(d.QuizJSON, d.QuizJSON_EN, d.QuizJSON_BG, locale)
-
-	// Day metinlerini dile göre localize et
-	d.Title = localizedDayTitle(*d, r)
-	d.Description = localizedDescription(*d, r)
-	d.Bullets = localizedBullets(*d, r)
-
-	render(w, r, pages.Learn(pages.LearnProps{
-		Day:       *d,
-		ActiveTab: tab,
-		UserEmail: h.SM.GetString(r.Context(), session.KeyEmail),
-		Completed: completed,
-		Unlocked:  allUnlocked(),
-		Questions: questions,
-	}))
-}
-
-// allUnlocked: tüm slotlar her zaman erişilebilir.
-func allUnlocked() map[string]bool {
-	return map[string]bool{"l1": true, "l2": true, "l3": true, "file": true, "quiz": true}
 }
 
 func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
