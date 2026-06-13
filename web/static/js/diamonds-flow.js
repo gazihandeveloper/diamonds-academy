@@ -121,10 +121,10 @@
         if (data.passed) {
           fb.textContent = data.correct + ' / ' + data.total + ' — Tebrikler! Geçtiniz.';
           fb.className = 'text-sm mono text-green-400';
-        } else {
-          fb.textContent = data.correct + ' / ' + data.total + ' — Başarısız! %70 gerekli. Önceki 3 videoyu tekrar izlemelisin.';
-          fb.className = 'text-sm mono text-red-400';
-        }
+		} else {
+			fb.textContent = data.correct + ' / ' + data.total + ' — Başarısız! %' + (data.needPct || 70) + ' gerekli. Tekrar deneyebilirsin.';
+			fb.className = 'text-sm mono text-red-400';
+		}
       }
 
       if (data.passed) {

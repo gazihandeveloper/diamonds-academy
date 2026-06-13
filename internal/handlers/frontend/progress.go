@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -170,14 +169,9 @@ func (h *Handler) QuizSubmit(w http.ResponseWriter, r *http.Request) {
 
 	if passed && uid != 0 {
 		_ = h.Progress.MarkComplete(r.Context(), uid, req.DayNo, "quiz")
-	} else if !passed && uid != 0 {
-		// Başarısız: önceki 3 adımın slot tamamlamalarını sıfırla (tekrar izleme zorunlu)
-		for i := req.DayNo - 3; i < req.DayNo; i++ {
-			if i >= 1 {
-				h.clearStepCompletion(r.Context(), uid, i)
-			}
-		}
 	}
+	// Başarısız quiz: önceki adımlar silinmez. Kullanıcı doğrudan tekrar deneyebilir.
+	// Sonraki adımların kilidi yalnızca quiz geçilince açılır (frontend.go sequential unlock).
 
 	writeJSON(w, map[string]any{
 		"correct":  correct,
@@ -186,12 +180,6 @@ func (h *Handler) QuizSubmit(w http.ResponseWriter, r *http.Request) {
 		"answers":  correctIdx,
 		"needPct":  70,
 	})
-}
-
-// clearStepCompletion removes all slot_completion entries for a step, forcing re-watch.
-func (h *Handler) clearStepCompletion(ctx context.Context, uid int64, stepNo int) {
-	_, _ = h.DB.ExecContext(ctx,
-		`DELETE FROM slot_completion WHERE user_id = ? AND day_no = ?`, uid, stepNo)
 }
 
 func boolToInt(b bool) int {
