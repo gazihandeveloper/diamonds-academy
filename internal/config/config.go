@@ -10,16 +10,17 @@ import (
 )
 
 type Config struct {
-	Env             string
-	Host            string
-	Port            int
-	SessionSecret   string
-	SessionLifetime time.Duration
-	DBPath          string
-	LogLevel        string
-	AdminEmail      string
-	AdminPassword   string
-	DeepSeekAPIKey  string
+	Env              string
+	Host             string
+	Port             int
+	SessionSecret    string
+	SessionLifetime  time.Duration
+	DBPath           string
+	LogLevel         string
+	AdminEmail       string
+	AdminPassword    string
+	DeepSeekAPIKey   string
+	USDTRYRate       float64
 }
 
 func Load() (*Config, error) {
@@ -46,6 +47,12 @@ func Load() (*Config, error) {
 		AdminEmail:      getenv("ADMIN_EMAIL", "admin@diamondsacademy.com"),
 		AdminPassword:   getenv("ADMIN_PASSWORD", "diamondsadmin"),
 		DeepSeekAPIKey:  getenv("DEEPSEEK_API_KEY", ""),
+		USDTRYRate:      32.0,
+	}
+	if v := getenv("USD_TRY_RATE", ""); v != "" {
+		if r, err := strconv.ParseFloat(v, 64); err == nil && r > 0 {
+			cfg.USDTRYRate = r
+		}
 	}
 
 	if len(cfg.SessionSecret) < 16 {

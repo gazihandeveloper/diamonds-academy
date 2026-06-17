@@ -22,24 +22,26 @@ const certTemplate = "web/static/certificate-template.png"
 
 func (h *Handler) Certificate(w http.ResponseWriter, r *http.Request) {
 	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
-	all, _ := h.Days.List(r.Context())
-	published := 0
-	for _, d := range all {
-		if d.Published {
-			published++
-		}
-	}
-	completed, _ := h.Progress.CompletedDays(r.Context(), uid)
-	completedCount := 0
-	for _, v := range completed {
-		if v {
-			completedCount++
-		}
-	}
 
-	if published == 0 || completedCount < published {
+	// Yeni sistem: education_steps tabanlı tamamlama kontrolü (Dashboard ile aynı mantık)
+	eduList, err := h.EduSteps.List(r.Context())
+	if err != nil || len(eduList) == 0 {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
+	}
+
+	allSlots, _ := h.Progress.AllCompletedSlots(r.Context(), uid)
+
+	// Her education step'in kendi slotu tamamlanmış mı kontrol et
+	for _, es := range eduList {
+		slot := "l1"
+		if es.Kind == "quiz" {
+			slot = "quiz"
+		}
+		if m, ok := allSlots[es.StepNo]; !ok || !m[slot] {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 	}
 
 	name := h.SM.GetString(r.Context(), "name")

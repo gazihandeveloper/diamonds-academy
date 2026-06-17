@@ -91,6 +91,15 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Tüm adımlar tamamlandı mı? (currentStep'ten önce hesaplanmalı)
+	allCompleted := true
+	for _, c := range stepCompleted {
+		if !c {
+			allCompleted = false
+			break
+		}
+	}
+
 	stepUnlocked := make([]bool, len(stepList))
 	for i := range stepList {
 		if i == 0 {
@@ -103,6 +112,9 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	currentStep := stepList[0].Number
 	if firstUnfinished > 0 {
 		currentStep = firstUnfinished
+	} else if allCompleted && len(stepList) > 0 {
+		// Tüm adımlar tamamlandıysa son adımı göster (ilk adım yerine)
+		currentStep = stepList[len(stepList)-1].Number
 	}
 	if q := r.URL.Query().Get("step"); q != "" {
 		if n, err := strconv.Atoi(q); err == nil && n >= 1 && n <= len(stepList) {
@@ -111,14 +123,6 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			if idx >= 0 && idx < len(stepUnlocked) && stepUnlocked[idx] {
 				currentStep = n
 			}
-		}
-	}
-
-	allCompleted := true
-	for _, c := range stepCompleted {
-		if !c {
-			allCompleted = false
-			break
 		}
 	}
 

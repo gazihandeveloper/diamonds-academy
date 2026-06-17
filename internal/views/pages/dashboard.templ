@@ -91,14 +91,22 @@ templ Dashboard(p DashboardProps) {
 					}
 
 					// Sonraki adım butonu
-					if p.CurrentStep-1 >= 0 && p.CurrentStep-1 < len(p.StepCompleted) && p.StepCompleted[p.CurrentStep-1] {
-						<div class="mt-6 md:mt-8 flex justify-center">
-							if nextStep(p.Steps, p.CurrentStep) > 0 {
+					if nextStep(p.Steps, p.CurrentStep) > 0 {
+						if p.CurrentStep-1 >= 0 && p.CurrentStep-1 < len(p.StepCompleted) && p.StepCompleted[p.CurrentStep-1] {
+							// Adım tamamlandı: aktif buton
+							<div class="mt-6 md:mt-8 flex justify-center">
 								<a href={ templ.SafeURL("/?step=" + itoa(nextStep(p.Steps, p.CurrentStep))) } class="cs-btn-primary px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base">
 									Sonraki Adım →
 								</a>
-							}
-						</div>
+							</div>
+						} else if !p.IsQuiz {
+							// Video adımı tamamlanmadı: disabled buton (quiz'de gizli)
+							<div class="mt-6 md:mt-8 flex justify-center">
+								<button type="button" disabled title="Videoyu tamamlayınca aktif olacak" class="px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed opacity-60">
+									Sonraki Adım →
+								</button>
+							</div>
+						}
 					}
 				</div>
 			</main>

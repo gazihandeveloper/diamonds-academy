@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"github.com/alexedwards/scs/v2"
@@ -49,32 +51,50 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	cost, liveDS, totalCalls := deepseekCost(r.Context(), h.DB)
-	render(w, r, pages.Admin(pages.AdminProps{Users: users, TotalSteps: totalSteps, UserRows: rows,
-		OnlineCount:   countOnline(r.Context(), h.DB),
-		DeepseekCost:  cost,
-		DSLiveUsers:   liveDS,
-		DSTotalCalls:  totalCalls,
+	usdRate := usdTryRate()
+	totalUSD, dailyUSD, liveDS, totalCalls := deepseekCost(r.Context(), h.DB)
+	render(w, r, pages.Admin(pages.AdminProps{
+		Users:           users,
+		TotalSteps:      totalSteps,
+		UserRows:        rows,
+		DeepseekCostTRY: totalUSD * usdRate,
+		DSDailyCostTRY:  dailyUSD * usdRate,
+		DSLiveUsers:     liveDS,
+		DSTotalCalls:    totalCalls,
 	}))
 }
 
-func countOnline(ctx context.Context, db *sql.DB) int {
-	var n int
-	_ = db.QueryRowContext(ctx,
-		`SELECT COUNT(DISTINCT user_id) FROM watch_progress WHERE updated_at > datetime('now', '-5 minutes')`).Scan(&n)
-	return n
+func usdTryRate() float64 {
+	if v := os.Getenv("USD_TRY_RATE"); v != "" {
+		if r, err := strconv.ParseFloat(v, 64); err == nil && r > 0 {
+			return r
+		}
+	}
+	return 32.0
 }
 
-func deepseekCost(ctx context.Context, db *sql.DB) (cost float64, liveUsers int, totalCalls int) {
+func deepseekCost(ctx context.Context, db *sql.DB) (totalUSD float64, dailyUSD float64, liveUsers int, totalCalls int) {
 	var prompt, completion int
 	_ = db.QueryRowContext(ctx,
-		`SELECT COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0) FROM deepseek_usage`).Scan(&prompt, &completion)
-	cost = float64(prompt)*3.0/1000000 + float64(completion)*15.0/1000000
+		`SELECT COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0)
+		 FROM deepseek_usage WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`).Scan(&prompt, &completion)
+	// DeepSeek pricing: $0.27/1M input, $1.10/1M output (deepseek-chat)
+	const pricePrompt = 0.27 / 1000000
+	const priceCompletion = 1.10 / 1000000
+	totalUSD = float64(prompt)*pricePrompt + float64(completion)*priceCompletion
+
+	var dprompt, dcompletion int
+	_ = db.QueryRowContext(ctx,
+		`SELECT COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0)
+		 FROM deepseek_usage WHERE date(created_at) = date('now')`).Scan(&dprompt, &dcompletion)
+	dailyUSD = float64(dprompt)*pricePrompt + float64(dcompletion)*priceCompletion
 
 	_ = db.QueryRowContext(ctx,
-		`SELECT COUNT(DISTINCT user_id) FROM deepseek_usage WHERE created_at > datetime('now', '-5 minutes')`).Scan(&liveUsers)
+		`SELECT COUNT(DISTINCT user_id) FROM deepseek_usage
+		 WHERE created_at > datetime('now', '-5 minutes')`).Scan(&liveUsers)
 	_ = db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM deepseek_usage`).Scan(&totalCalls)
+		`SELECT COUNT(*) FROM deepseek_usage
+		 WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`).Scan(&totalCalls)
 	return
 }
 

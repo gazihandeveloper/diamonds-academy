@@ -119,18 +119,20 @@
 
       if (fb) {
         if (data.passed) {
-          fb.textContent = data.correct + ' / ' + data.total + ' — Tebrikler! Geçtiniz.';
+          const nextStep = (parseInt(form.dataset.stepNo, 10) || 0) + 1;
+          fb.textContent = data.correct + ' / ' + data.total + ' — Tebrikler! Geçtin. Sonraki adıma yönlendiriliyorsun…';
           fb.className = 'text-sm mono text-green-400';
-		} else {
-			fb.textContent = data.correct + ' / ' + data.total + ' — Başarısız! %' + (data.needPct || 70) + ' gerekli. Tekrar deneyebilirsin.';
-			fb.className = 'text-sm mono text-red-400';
-		}
+        } else {
+          fb.textContent = data.correct + ' / ' + data.total + ' — Başarısız! %' + (data.needPct || 70) + ' gerekli. Cevaplarını değiştirip tekrar dene.';
+          fb.className = 'text-sm mono text-red-400';
+        }
       }
 
       if (data.passed) {
+        const nextStep = (parseInt(form.dataset.stepNo, 10) || 0) + 1;
         setTimeout(function () {
-          window.location.href = '/';
-        }, 1800);
+          window.location.href = '/?step=' + nextStep;
+        }, 1500);
       }
     },
 

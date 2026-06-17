@@ -13,13 +13,13 @@ type AdminUserRow struct {
 }
 
 type AdminProps struct {
-	Users        []auth.User
-	TotalSteps   int
-	UserRows     []AdminUserRow
-	OnlineCount  int
-	DeepseekCost float64
-	DSLiveUsers  int
-	DSTotalCalls int
+	Users           []auth.User
+	TotalSteps      int
+	UserRows        []AdminUserRow
+	DeepseekCostTRY float64
+	DSDailyCostTRY  float64
+	DSLiveUsers     int
+	DSTotalCalls    int
 }
 
 func progressPct2(done, total int) string {
@@ -46,7 +46,7 @@ func progressColor(done, total int) string {
 templ Admin(p AdminProps) {
 	@layouts.AdminBase("Genel Bakış", "overview") {
 		<main class="p-4 md:p-6 pt-16 md:pt-6">
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 				<div class="cs-stat-card">
 					<div class="cs-stat-label">Kullanıcılar</div>
 					<div class="cs-stat-value">{ itoa2(len(p.Users)) }</div>
@@ -61,19 +61,12 @@ templ Admin(p AdminProps) {
 				</div>
 				<div class="cs-stat-card">
 					<div class="cs-stat-label flex items-center gap-2">
-						Canlı İzleyen
-						<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-					</div>
-					<div class="cs-stat-value" style="color:#0972d3">{ itoa2(p.OnlineCount) }</div>
-				</div>
-				<div class="cs-stat-card">
-					<div class="cs-stat-label flex items-center gap-2">
 						🤖 DeepSeek API
 						<span class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
 					</div>
-					<div class="cs-stat-value" style="color:#7c3aed">${ fmtCost(p.DeepseekCost) }</div>
+					<div class="cs-stat-value" style="color:#7c3aed">₺{ fmtCostTR(p.DeepseekCostTRY) }</div>
 					<div class="text-xs text-gray-400 mt-1">
-						{ itoa2(p.DSLiveUsers) } canlı · { itoa2(p.DSTotalCalls) } çağrı
+						Bugün ₺{ fmtCostTR(p.DSDailyCostTRY) } · { itoa2(p.DSLiveUsers) } canlı · { itoa2(p.DSTotalCalls) } çağrı
 					</div>
 				</div>
 			</div>
@@ -135,13 +128,18 @@ func certCount(rows []AdminUserRow) int {
 	return n
 }
 
-func fmtCost(c float64) string {
+func fmtCostTR(c float64) string {
 	if c < 0.01 {
-		return "0.01"
+		return "0,01"
 	}
 	s := itoa(int(c*100))
 	if len(s) == 1 {
-		return "0.0" + s
+		return "0,0" + s
 	}
-	return s[:len(s)-2] + "." + s[len(s)-2:]
+	if len(s) == 2 {
+		return "0," + s
+	}
+	intPart := s[:len(s)-2]
+	decPart := s[len(s)-2:]
+	return intPart + "," + decPart
 }
