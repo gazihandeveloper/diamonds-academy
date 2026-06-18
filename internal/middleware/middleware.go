@@ -38,13 +38,13 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
-// RequireAuth redirects to /login if no session user.
+// RequireAuth redirects to /access if no session user.
 func RequireAuth(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := sm.GetInt64(r.Context(), session.KeyUserID)
 			if id == 0 {
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				http.Redirect(w, r, "/access", http.StatusSeeOther)
 				return
 			}
 			next.ServeHTTP(w, r)

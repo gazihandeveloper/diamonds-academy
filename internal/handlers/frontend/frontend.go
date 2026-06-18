@@ -35,13 +35,13 @@ func New(sm *scs.SessionManager, db *sql.DB, authSvc *auth.Service) *Handler {
 
 // sidebarFromSession builds sidebar props from session data.
 func (h *Handler) sidebarFromSession(r *http.Request) components.SidebarProps {
-	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
 	name := h.SM.GetString(r.Context(), session.KeyName)
 	role := h.SM.GetString(r.Context(), session.KeyRole)
+	granted := h.SM.GetBool(r.Context(), session.KeyAccessGranted)
 
 	return components.SidebarProps{
 		UserName:   name,
-		IsLoggedIn: uid != 0,
+		IsLoggedIn: granted || role == "admin",
 		IsAdmin:    role == "admin",
 	}
 }

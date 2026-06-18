@@ -2,11 +2,13 @@ package frontend
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/diamondsacademy/diamonds/internal/access"
+	"github.com/diamondsacademy/diamonds/internal/auth"
 	"github.com/diamondsacademy/diamonds/internal/session"
 	"github.com/diamondsacademy/diamonds/internal/views/pages"
 )
@@ -20,11 +22,12 @@ const (
 type AccessHandler struct {
 	SM        *scs.SessionManager
 	AccessSvc *access.Service
+	AuthSvc   *auth.Service
 }
 
 // NewAccessHandler creates a new access gate handler.
-func NewAccessHandler(sm *scs.SessionManager, as *access.Service) *AccessHandler {
-	return &AccessHandler{SM: sm, AccessSvc: as}
+func NewAccessHandler(sm *scs.SessionManager, as *access.Service, authSvc *auth.Service) *AccessHandler {
+	return &AccessHandler{SM: sm, AccessSvc: as, AuthSvc: authSvc}
 }
 
 // AccessGet renders the access code entry page.
@@ -92,5 +95,18 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.SM.Put(r.Context(), session.KeyAccessGranted, true)
+
+	// Create anonymous user for progress tracking
+	u, err := h.AuthSvc.CreateAnonymous(r.Context())
+	if err != nil {
+		// Non-fatal: access is granted even if user creation fails
+		slog.Error("create anonymous user failed", "err", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	h.SM.Put(r.Context(), session.KeyUserID, u.ID)
+	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
+	h.SM.Put(r.Context(), session.KeyName, u.Name)
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -21,7 +21,7 @@ func NewAuth(sm *scs.SessionManager, a *auth.Service) *AuthHandler {
 
 func (h *AuthHandler) LoginGet(w http.ResponseWriter, r *http.Request) {
 	if h.SM.GetInt64(r.Context(), session.KeyUserID) != 0 {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
 	render(w, r, pages.Login(pages.LoginProps{}))
@@ -45,12 +45,16 @@ func (h *AuthHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Only admins can login
+	if u.Role != auth.RoleAdmin {
+		render(w, r, pages.Login(pages.LoginProps{Email: email, Error: "Bu sayfaya sadece yöneticiler erişebilir."}))
+		return
+	}
+
 	if err := h.SM.RenewToken(r.Context()); err != nil {
 		http.Error(w, "session error", http.StatusInternalServerError)
 		return
 	}
-	// Clear any pre-existing access grant from anonymous session
-	h.SM.Remove(r.Context(), session.KeyAccessGranted)
 	h.SM.Put(r.Context(), session.KeyUserID, u.ID)
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
@@ -62,123 +66,18 @@ func (h *AuthHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dest := "/"
-	if u.Role == auth.RoleAdmin {
-		dest = "/admin"
-	}
-	http.Redirect(w, r, dest, http.StatusSeeOther)
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	_ = h.SM.Destroy(r.Context())
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func (h *AuthHandler) RegisterGet(w http.ResponseWriter, r *http.Request) {
-	// Zaten giriş yapmışsa anasayfa
-	if h.SM.GetInt64(r.Context(), session.KeyUserID) != 0 {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	render(w, r, pages.Register(pages.RegisterProps{}))
-}
-
-func (h *AuthHandler) RegisterPost(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	email := r.FormValue("email")
-	name := r.FormValue("name")
-	phone := r.FormValue("phone")
-	password := r.FormValue("password")
-	confirm := r.FormValue("password_confirm")
-
-	fail := func(msg string) {
-		render(w, r, pages.Register(pages.RegisterProps{Email: email, Name: name, Phone: phone, Error: msg}))
-	}
-
-	if len(password) < 6 {
-		fail("Şifre en az 6 karakter olmalı.")
-		return
-	}
-	if password != confirm {
-		fail("Şifreler eşleşmiyor.")
-		return
-	}
-	if len(name) < 2 {
-		fail("Ad Soyad en az 2 karakter olmalı.")
-		return
-	}
-	if len(phone) < 7 {
-		fail("Geçerli bir telefon numarası girin.")
-		return
-	}
-
-	u, err := h.Auth.Register(r.Context(), email, name, phone, password, auth.RoleUser)
-	if err != nil {
-		if errors.Is(err, auth.ErrUserExists) {
-			fail("Bu e-posta zaten kayıtlı.")
-			return
-		}
-		fail("Kayıt sırasında hata: " + err.Error())
-		return
-	}
-
-	if err := h.SM.RenewToken(r.Context()); err != nil {
-		http.Error(w, "session error", http.StatusInternalServerError)
-		return
-	}
-	// Clear any pre-existing access grant from anonymous session
-	h.SM.Remove(r.Context(), session.KeyAccessGranted)
-	h.SM.Put(r.Context(), session.KeyUserID, u.ID)
-	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
-	h.SM.Put(r.Context(), session.KeyName, u.Name)
-	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
-	h.SM.Put(r.Context(), session.KeyMustChangePassword, u.MustChangePassword)
-
-	if u.MustChangePassword {
-		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
-		return
-	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func (h *AuthHandler) ForgotPasswordGet(w http.ResponseWriter, r *http.Request) {
-	if h.SM.GetInt64(r.Context(), session.KeyUserID) != 0 {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{}))
-}
-
-func (h *AuthHandler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	email := r.FormValue("email")
-
-	err := h.Auth.ResetPassword(r.Context(), email)
-	if err != nil {
-		if errors.Is(err, auth.ErrUserNotFound) {
-			// Don't reveal whether the email exists
-			msg := "Bu e-posta adresi ile ilgili bir işlem yapılamadı."
-			render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Email: email, Error: msg}))
-			return
-		}
-		render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Email: email, Error: "Beklenmeyen bir hata oluştu."}))
-		return
-	}
-
-	render(w, r, pages.ForgotPassword(pages.ForgotPasswordProps{Success: "Şifreniz sıfırlandı. Varsayılan şifre ile giriş yapabilirsiniz."}))
+	http.Redirect(w, r, "/access", http.StatusSeeOther)
 }
 
 func (h *AuthHandler) ChangePasswordGet(w http.ResponseWriter, r *http.Request) {
 	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
 	if uid == 0 {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/access", http.StatusSeeOther)
 		return
 	}
 	render(w, r, pages.ChangePassword(pages.ChangePasswordProps{}))
@@ -187,7 +86,7 @@ func (h *AuthHandler) ChangePasswordGet(w http.ResponseWriter, r *http.Request) 
 func (h *AuthHandler) ChangePasswordPost(w http.ResponseWriter, r *http.Request) {
 	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
 	if uid == 0 {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/access", http.StatusSeeOther)
 		return
 	}
 

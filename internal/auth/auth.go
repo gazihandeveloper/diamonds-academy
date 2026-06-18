@@ -171,4 +171,25 @@ func (s *Service) EnsureAdmin(ctx context.Context, email, password string) error
 	return err
 }
 
+// CreateAnonymous creates a user with no login credentials for access-code-only entry.
+// Uses a random email so the UNIQUE constraint is never violated.
+func (s *Service) CreateAnonymous(ctx context.Context) (*User, error) {
+	email := "anon_" + time.Now().Format("20060102150405") + "@guest.local"
+	name := "Ziyaretçi"
+	// Random password — never used since login is disabled for non-admins
+	hash, err := bcrypt.GenerateFromPassword([]byte(email), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.db.ExecContext(ctx,
+		`INSERT INTO users(email, name, phone, password_hash, role) VALUES(?,?,?,?,?)`,
+		email, name, "", string(hash), string(RoleUser),
+	)
+	if err != nil {
+		return nil, err
+	}
+	id, _ := res.LastInsertId()
+	return &User{ID: id, Email: email, Name: name, Role: RoleUser, CreatedAt: time.Now()}, nil
+}
+
 func normalizeEmail(e string) string { return strings.ToLower(strings.TrimSpace(e)) }

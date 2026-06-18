@@ -275,8 +275,8 @@ func TestRequireAuth_RedirectsWhenNoUser(t *testing.T) {
 	if w.Code != http.StatusSeeOther {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusSeeOther)
 	}
-	if loc := w.Header().Get("Location"); loc != "/login" {
-		t.Errorf("Location = %q, want %q", loc, "/login")
+	if loc := w.Header().Get("Location"); loc != "/access" {
+		t.Errorf("Location = %q, want %q", loc, "/access")
 	}
 }
 

@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
@@ -48,51 +46,40 @@ func NewRouter(d Deps) http.Handler {
 	authH := frontend.NewAuth(d.SM, d.AuthSvc)
 	adminH := adm.New(d.SM, d.DB)
 	accessSvc := access.NewService(d.DB)
-	accessH := frontend.NewAccessHandler(d.SM, accessSvc)
+	accessH := frontend.NewAccessHandler(d.SM, accessSvc, d.AuthSvc)
 	adminAccessH := adm.NewAccessHandler(d.SM, accessSvc)
 	apiH := api.New(d.DB, d.SM)
 
-	// Public (auth gerektirmeyen)
+	// Public: no auth required
+	web.Get("/access", accessH.AccessGet)
+	web.Post("/access", accessH.AccessPost)
+	web.Post("/logout", authH.Logout)
+
+	// Admin-only login (regular users cannot login)
 	web.Get("/login", authH.LoginGet)
 	web.Post("/login", authH.LoginPost)
-	web.Post("/logout", authH.Logout)
-	web.Get("/register", authH.RegisterGet)
-	web.Post("/register", authH.RegisterPost)
-	web.Get("/forgot-password", authH.ForgotPasswordGet)
-	web.Post("/forgot-password", authH.ForgotPasswordPost)
 
-	// Protected: kullanıcı girişi zorunlu
+	// Access gate: must pass access code (no user account needed)
+	web.Group(func(gated chi.Router) {
+		gated.Use(mw.RequireAccessGate(d.SM))
+
+		gated.Get("/", front.Dashboard)
+		gated.Get("/certificate", front.Certificate)
+		gated.Get("/learn/{stepNo}", func(w http.ResponseWriter, r *http.Request) {
+			stepNo := chi.URLParam(r, "stepNo")
+			http.Redirect(w, r, "/?step="+stepNo, http.StatusMovedPermanently)
+		})
+		gated.Post("/api/progress", front.ProgressBeat)
+		gated.Get("/api/progress/{dayNo}", front.ProgressForDay)
+		gated.Post("/api/slot-complete", front.MarkSlot)
+		gated.Post("/api/quiz-submit", front.QuizSubmit)
+		gated.Get("/wellbi", front.Wellbi)
+		gated.Post("/api/wellbi/chat", apiH.WellbiChat)
+	})
+
+	// Admin: requires login + admin role
 	web.Group(func(prot chi.Router) {
 		prot.Use(mw.RequireAuth(d.SM))
-
-		// Access gate page: authenticated users must pass this before content
-		prot.Get("/access", accessH.AccessGet)
-		prot.Post("/access", accessH.AccessPost)
-
-		// Access gate: non-admin users must pass access code check
-		prot.Group(func(gated chi.Router) {
-			gated.Use(mw.RequireAccessGate(d.SM))
-
-			gated.Get("/", front.Dashboard)
-			gated.Get("/certificate", front.Certificate)
-			gated.Get("/learn/{stepNo}", func(w http.ResponseWriter, r *http.Request) {
-				stepNo := chi.URLParam(r, "stepNo")
-				http.Redirect(w, r, "/?step="+stepNo, http.StatusMovedPermanently)
-			})
-			gated.Post("/api/progress", front.ProgressBeat)
-			gated.Get("/api/progress/{dayNo}", front.ProgressForDay)
-			gated.Post("/api/slot-complete", front.MarkSlot)
-			gated.Post("/api/quiz-submit", front.QuizSubmit)
-		})
-
-		// Profile, change-password and access page are NOT gated (user needs these without code)
-		prot.Get("/profile", front.Profile)
-		prot.Get("/change-password", authH.ChangePasswordGet)
-		prot.Post("/change-password", authH.ChangePasswordPost)
-		prot.Get("/wellbi", front.Wellbi)
-		prot.Post("/api/wellbi/chat", apiH.WellbiChat)
-
-		// Admin: admin rolü zorunlu (implicitly bypasses access gate via middleware)
 		prot.Route("/admin", func(a chi.Router) {
 			a.Use(mw.RequireAdmin(d.SM))
 			a.Get("/", adminH.Index)
@@ -104,7 +91,6 @@ func NewRouter(d Deps) http.Handler {
 			a.Post("/days/{id}/delete", adminH.DayDelete)
 			a.Post("/days/auto-translate", adminH.AutoTranslateQuiz)
 			a.Post("/days/fetch-transcript", adminH.FetchTranscript)
-			// Access code management
 			a.Get("/education-system", adminH.EducationSystem)
 			a.Post("/education-system/create", adminH.CreateStep)
 			a.Post("/education-system/edit", adminH.EditStep)
@@ -130,19 +116,3 @@ func NewRouter(d Deps) http.Handler {
 	return r
 }
 
-// safeReferer returns the Referer if same-origin, otherwise "/".
-func safeReferer(r *http.Request) string {
-	ref := r.Header.Get("Referer")
-	if ref == "" {
-		return "/"
-	}
-	u, err := url.Parse(ref)
-	if err != nil {
-		return "/"
-	}
-	// Only allow same-host redirects
-	if !strings.EqualFold(u.Host, r.Host) {
-		return "/"
-	}
-	return ref
-}

@@ -24,7 +24,7 @@ templ Login(p LoginProps) {
 					</div>
 				</div>
 				<div class="cs-card p-8">
-					<h1 class="text-lg font-bold text-gray-900 mb-6">{ i18n.TC(ctx, "login.title") }</h1>
+					<h1 class="text-lg font-bold text-gray-900 mb-6">Yönetici Girişi</h1>
 					if p.Error != "" {
 						<div class="mb-4 p-3 border border-red-200 bg-red-50 text-red-700 text-sm">{ p.Error }</div>
 					}
@@ -40,16 +40,8 @@ templ Login(p LoginProps) {
 							<label class="cs-label">{ i18n.TC(ctx, "login.password") }</label>
 							<input type="password" name="password" required class="cs-input"/>
 						</div>
-						<button type="submit" class="w-full cs-btn-primary py-3">{ i18n.TC(ctx, "login.button") }</button>
+						<button type="submit" class="w-full cs-btn-primary py-3">Giriş Yap</button>
 					</form>
-					<div class="mt-6 text-center space-y-3">
-						<div>
-							<a href="/register" class="text-blue-600 hover:text-blue-700 font-medium text-sm">{ i18n.TC(ctx, "login.not_member") }</a>
-						</div>
-						<div>
-							<a href="/forgot-password" class="text-gray-400 hover:text-gray-600 text-sm">{ i18n.TC(ctx, "login.forgot_password") }</a>
-						</div>
-					</div>
 				</div>
 			</div>
 		</div>
