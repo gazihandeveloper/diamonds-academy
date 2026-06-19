@@ -16,13 +16,18 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/handlers/frontend"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
 	mw "github.com/diamondsacademy/diamonds/internal/middleware"
+	"github.com/diamondsacademy/diamonds/internal/oauth"
+	"golang.org/x/oauth2"
 )
 
 type Deps struct {
-	Logger  *slog.Logger
-	DB      *sql.DB
-	SM      *scs.SessionManager
-	AuthSvc *auth.Service
+	Logger           *slog.Logger
+	DB               *sql.DB
+	SM               *scs.SessionManager
+	AuthSvc          *auth.Service
+	GoogleOAuth      *oauth2.Config
+	AppleProvider    *oauth.AppleProvider
+	InstagramProvider *oauth.InstagramProvider
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -50,8 +55,22 @@ func NewRouter(d Deps) http.Handler {
 	adminAccessH := adm.NewAccessHandler(d.SM, accessSvc)
 	apiH := api.New(d.DB, d.SM)
 
-	// Public: no auth required
-	web.Get("/access", accessH.AccessGet)
+	// OAuth handlers
+	oauthH := frontend.NewOAuthHandler(d.SM, d.AuthSvc, d.GoogleOAuth, d.AppleProvider, d.InstagramProvider)
+	web.Get("/auth/google", oauthH.GoogleLogin)
+	web.Get("/auth/google/callback", oauthH.GoogleCallback)
+	web.Get("/auth/apple", oauthH.AppleLogin)
+	web.Post("/auth/apple/callback", oauthH.AppleCallback)
+	web.Get("/auth/instagram", oauthH.InstagramLogin)
+	web.Get("/auth/instagram/callback", oauthH.InstagramCallback)
+
+	// Root: login page (Google/Apple + access code)
+	web.Get("/", front.GateLogin)
+
+	// Legacy access page redirects to root
+	web.Get("/access", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	})
 	web.Post("/access", accessH.AccessPost)
 	web.Post("/logout", authH.Logout)
 
@@ -59,12 +78,13 @@ func NewRouter(d Deps) http.Handler {
 	web.Get("/login", authH.LoginGet)
 	web.Post("/login", authH.LoginPost)
 
-	// Access gate: must pass access code (no user account needed)
+	// Access gate: must pass access code or be OAuth-authenticated
 	web.Group(func(gated chi.Router) {
 		gated.Use(mw.RequireAccessGate(d.SM))
 
-		gated.Get("/", front.Dashboard)
 		gated.Get("/certificate", front.Certificate)
+		gated.Get("/profile", front.Profile)
+		gated.Post("/profile", front.ProfileUpdate)
 		gated.Get("/learn/{stepNo}", func(w http.ResponseWriter, r *http.Request) {
 			stepNo := chi.URLParam(r, "stepNo")
 			http.Redirect(w, r, "/?step="+stepNo, http.StatusMovedPermanently)

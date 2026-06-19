@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/alexedwards/scs/v2"
@@ -44,6 +45,44 @@ func (h *Handler) sidebarFromSession(r *http.Request) components.SidebarProps {
 		IsLoggedIn: granted || role == "admin",
 		IsAdmin:    role == "admin",
 	}
+}
+
+// GateLogin renders the main login page (Google/Apple + access code).
+// If the user is already authenticated, redirects to dashboard.
+func (h *Handler) GateLogin(w http.ResponseWriter, r *http.Request) {
+	granted := h.SM.GetBool(r.Context(), session.KeyAccessGranted)
+	role := h.SM.GetString(r.Context(), session.KeyRole)
+
+	// Already authenticated? Show dashboard.
+	if granted || role == "admin" {
+		h.Dashboard(w, r)
+		return
+	}
+
+	// Check for error from OAuth callback
+	errorMsg := ""
+	switch r.URL.Query().Get("error") {
+	case "google_denied":
+		errorMsg = "Google ile giriş iptal edildi."
+	case "google_exchange":
+		errorMsg = "Google ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+	case "apple_denied":
+		errorMsg = "Apple ile giriş iptal edildi."
+	case "apple_exchange":
+		errorMsg = "Apple ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+	case "apple_not_configured":
+		errorMsg = "Apple ile giriş henüz yapılandırılmadı. Lütfen Google ile devam edin."
+	case "instagram_denied":
+		errorMsg = "Instagram ile giriş iptal edildi."
+	case "instagram_exchange":
+		errorMsg = "Instagram ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+	case "instagram_not_configured":
+		errorMsg = "Instagram ile giriş henüz yapılandırılmadı. Lütfen Google ile devam edin."
+	case "user_creation":
+		errorMsg = "Hesap oluşturulamadı. Lütfen tekrar deneyin."
+	}
+
+	render(w, r, pages.GateLogin(pages.GateLoginProps{Error: errorMsg}))
 }
 
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +287,44 @@ func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
 		User:           *u,
 		DaysCompleted:  daysCompleted,
 		SlotsCompleted: slotsCompleted,
+		Success:        h.SM.PopString(r.Context(), "profile_success"),
+		Error:          h.SM.PopString(r.Context(), "profile_error"),
 	}))
+}
+
+func (h *Handler) ProfileUpdate(w http.ResponseWriter, r *http.Request) {
+	uid := h.SM.GetInt64(r.Context(), session.KeyUserID)
+	if uid == 0 {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		h.SM.Put(r.Context(), "profile_error", "İsim boş bırakılamaz.")
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		return
+	}
+	if len(name) > 120 {
+		h.SM.Put(r.Context(), "profile_error", "İsim çok uzun.")
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		return
+	}
+
+	if err := h.AuthSvc.UpdateName(r.Context(), uid, name); err != nil {
+		h.SM.Put(r.Context(), "profile_error", "Güncelleme başarısız.")
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		return
+	}
+
+	h.SM.Put(r.Context(), session.KeyName, name)
+	h.SM.Put(r.Context(), "profile_success", "Profil bilgileriniz güncellendi.")
+	http.Redirect(w, r, "/profile", http.StatusSeeOther)
 }
 
 func (h *Handler) Wellbi(w http.ResponseWriter, r *http.Request) {

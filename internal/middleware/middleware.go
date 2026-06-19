@@ -38,13 +38,13 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
-// RequireAuth redirects to /access if no session user.
+// RequireAuth redirects to /login if no session user.
 func RequireAuth(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := sm.GetInt64(r.Context(), session.KeyUserID)
 			if id == 0 {
-				http.Redirect(w, r, "/access", http.StatusSeeOther)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -66,21 +66,19 @@ func RequireAdmin(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	}
 }
 
-// RequireAccessGate redirects to /access if the user hasn't passed the access gate.
-// Skips admin routes and the access page itself.
+// RequireAccessGate redirects to / if the user hasn't passed the access gate.
+// Skips admin routes and the login page itself.
 func RequireAccessGate(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Admin users bypass the access gate
 			role := sm.GetString(r.Context(), session.KeyRole)
 			if role == string(auth.RoleAdmin) {
 				next.ServeHTTP(w, r)
 				return
 			}
-			// Check if access has been granted
 			granted := sm.GetBool(r.Context(), session.KeyAccessGranted)
 			if !granted {
-				http.Redirect(w, r, "/access", http.StatusSeeOther)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 			next.ServeHTTP(w, r)

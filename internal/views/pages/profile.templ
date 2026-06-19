@@ -15,6 +15,8 @@ type ProfileProps struct {
 	DaysCompleted  int
 	SlotsCompleted int
 	Theme          string
+	Success        string
+	Error          string
 }
 
 templ Profile(p ProfileProps) {
@@ -25,7 +27,21 @@ templ Profile(p ProfileProps) {
 				<div class="max-w-2xl mx-auto">
 					<h1 class="text-xl font-bold text-gray-900 mb-6">{ i18n.TC(ctx, "profile.title") }</h1>
 
+					if p.Success != "" {
+						<div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+							<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+							{ p.Success }
+						</div>
+					}
+					if p.Error != "" {
+						<div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+							<svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+							{ p.Error }
+						</div>
+					}
+
 					<div class="cs-card p-6 md:p-10 space-y-6">
+						<!-- Avatar & Name -->
 						<div class="flex items-center gap-4 pb-6 border-b border-gray-200">
 							<div class="w-16 h-16 rounded-full bg-blue-100 border-2 border-blue-600 flex items-center justify-center">
 								<span class="text-xl font-bold text-blue-700">{ initials(p.User.Name) }</span>
@@ -42,8 +58,30 @@ templ Profile(p ProfileProps) {
 							</div>
 						</div>
 
-						<div class="space-y-2">
-							@infoRow(i18n.TC(ctx, "profile.name"), p.User.Name)
+						<!-- Düzenleme Formu -->
+						<form method="POST" action="/profile" class="space-y-4">
+							<div>
+								<label class="cs-label">Ad Soyad</label>
+								<input
+									type="text" name="name" required
+									value={ p.User.Name }
+									maxlength="120"
+									placeholder="Adınız ve soyadınız"
+									class="cs-input"
+								/>
+								<p class="text-xs text-gray-400 mt-1">Sertifikanızda bu isim görünecektir.</p>
+							</div>
+
+							<div class="pt-2">
+								<button type="submit" class="cs-btn-primary py-2.5 px-6">
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+									Kaydet
+								</button>
+							</div>
+						</form>
+
+						<!-- Kullanıcı Bilgileri -->
+						<div class="space-y-2 pt-2">
 							@infoRow(i18n.TC(ctx, "profile.email"), p.User.Email)
 							if p.User.Phone != "" {
 								@infoRow(i18n.TC(ctx, "profile.phone"), p.User.Phone)
@@ -51,6 +89,7 @@ templ Profile(p ProfileProps) {
 							@infoRow(i18n.TC(ctx, "profile.registered"), p.User.CreatedAt.Format("02.01.2006"))
 						</div>
 
+						<!-- İlerleme -->
 						<div class="pt-6 border-t border-gray-200">
 							<h3 class="text-sm font-semibold text-gray-500 mb-4">{ i18n.TC(ctx, "profile.progress") }</h3>
 							<div class="flex gap-8">

@@ -30,16 +30,13 @@ func NewAccessHandler(sm *scs.SessionManager, as *access.Service, authSvc *auth.
 	return &AccessHandler{SM: sm, AccessSvc: as, AuthSvc: authSvc}
 }
 
-// AccessGet renders the access code entry page.
-// If already granted, redirects to /.
+// AccessGet redirects to the login page. Access code entry is now on /.
 func (h *AccessHandler) AccessGet(w http.ResponseWriter, r *http.Request) {
 	if h.SM.GetBool(r.Context(), session.KeyAccessGranted) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	// Read flash message from session (set by admin on code generation)
-	flash := h.SM.PopString(r.Context(), session.KeyFlash)
-	render(w, r, pages.Access(pages.AccessProps{Flash: flash}))
+	http.Redirect(w, r, "/", http.StatusMovedPermanently)
 }
 
 // AccessPost validates the submitted access code with rate limiting.
@@ -58,7 +55,7 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	attempts := h.SM.GetInt(r.Context(), session.KeyAccessAttempts)
 	if attempts >= maxAccessAttempts {
 		h.SM.Put(r.Context(), session.KeyAccessAttempts, attempts+1)
-		render(w, r, pages.Access(pages.AccessProps{
+		render(w, r, pages.GateLogin(pages.GateLoginProps{
 			Error: "Çok fazla başarısız deneme. Lütfen 30 saniye bekleyin.",
 		}))
 		return
@@ -67,11 +64,11 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	// Limit code length to prevent abuse
 	if len(code) > 64 {
-		render(w, r, pages.Access(pages.AccessProps{Error: "Geçersiz erişim kodu."}))
+		render(w, r, pages.GateLogin(pages.GateLoginProps{Error: "Geçersiz erişim kodu."}))
 		return
 	}
 	if code == "" {
-		render(w, r, pages.Access(pages.AccessProps{Error: "Erişim kodu boş bırakılamaz."}))
+		render(w, r, pages.GateLogin(pages.GateLoginProps{Error: "Erişim kodu boş bırakılamaz."}))
 		return
 	}
 
@@ -83,13 +80,12 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 		if !errors.Is(err, access.ErrInvalidCode) {
 			msg = "Beklenmeyen bir hata oluştu."
 		}
-		render(w, r, pages.Access(pages.AccessProps{Error: msg}))
+		render(w, r, pages.GateLogin(pages.GateLoginProps{Error: msg}))
 		return
 	}
 
 	// Reset attempts on success
 	h.SM.Remove(r.Context(), session.KeyAccessAttempts)
-	// Grant access
 	if err := h.SM.RenewToken(r.Context()); err != nil {
 		http.Error(w, "session error", http.StatusInternalServerError)
 		return
@@ -99,7 +95,6 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	// Create anonymous user for progress tracking
 	u, err := h.AuthSvc.CreateAnonymous(r.Context())
 	if err != nil {
-		// Non-fatal: access is granted even if user creation fails
 		slog.Error("create anonymous user failed", "err", err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return

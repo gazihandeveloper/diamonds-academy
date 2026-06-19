@@ -125,6 +125,18 @@ func (s *Service) SetPassword(ctx context.Context, userID int64, newPassword str
 	return err
 }
 
+// UpdateName updates the user's display name.
+func (s *Service) UpdateName(ctx context.Context, userID int64, name string) error {
+	if name == "" {
+		return errors.New("name is required")
+	}
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE users SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		name, userID,
+	)
+	return err
+}
+
 func (s *Service) MustChangePassword(ctx context.Context, userID int64) (bool, error) {
 	var mcp int
 	err := s.db.QueryRowContext(ctx, `SELECT must_change_password FROM users WHERE id = ?`, userID).Scan(&mcp)
@@ -190,6 +202,73 @@ func (s *Service) CreateAnonymous(ctx context.Context) (*User, error) {
 	}
 	id, _ := res.LastInsertId()
 	return &User{ID: id, Email: email, Name: name, Role: RoleUser, CreatedAt: time.Now()}, nil
+}
+
+// FindOrCreateByEmail looks up a user by email. If the user does not exist, it creates one.
+// If the user exists but has a placeholder name ("Ziyaretçi", email-as-name, etc.),
+// it updates the name with the one from the OAuth provider. Returns the user on success.
+func (s *Service) FindOrCreateByEmail(ctx context.Context, email, name string) (*User, error) {
+	email = normalizeEmail(email)
+	if email == "" {
+		return nil, errors.New("email is required")
+	}
+	if name == "" {
+		name = email
+	}
+
+	u, err := s.getByEmail(ctx, email)
+	if err == nil {
+		// Update name if it looks like a placeholder (anonymous, email-as-name, or empty)
+		if isPlaceholderName(u.Name) && name != email {
+			_, _ = s.db.ExecContext(ctx,
+				`UPDATE users SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+				name, u.ID,
+			)
+			u.Name = name
+		}
+		return u, nil
+	}
+	if !errors.Is(err, ErrUserNotFound) {
+		return nil, err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(email+time.Now().String()), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.db.ExecContext(ctx,
+		`INSERT INTO users(email, name, password_hash, role) VALUES(?,?,?,?)`,
+		email, name, string(hash), string(RoleUser),
+	)
+	if err != nil {
+		return nil, err
+	}
+	id, _ := res.LastInsertId()
+	return &User{ID: id, Email: email, Name: name, Role: RoleUser, CreatedAt: time.Now()}, nil
+}
+
+// isPlaceholderName returns true if the name looks like a system-generated placeholder.
+func isPlaceholderName(name string) bool {
+	if name == "" || name == "Ziyaretçi" {
+		return true
+	}
+	if strings.Contains(name, "@") && !strings.Contains(name, " ") {
+		return true
+	}
+	return false
+}
+
+func (s *Service) getByEmail(ctx context.Context, email string) (*User, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id, email, name, phone, role, created_at, must_change_password FROM users WHERE email = ?`, email)
+	var u User
+	if err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Phone, &u.Role, &u.CreatedAt, &u.MustChangePassword); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &u, nil
 }
 
 func normalizeEmail(e string) string { return strings.ToLower(strings.TrimSpace(e)) }

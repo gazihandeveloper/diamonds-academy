@@ -71,7 +71,7 @@ func (h *AuthHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	_ = h.SM.Destroy(r.Context())
-	http.Redirect(w, r, "/access", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *AuthHandler) ChangePasswordGet(w http.ResponseWriter, r *http.Request) {

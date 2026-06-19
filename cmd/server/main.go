@@ -15,6 +15,7 @@ import (
 	"github.com/diamondsacademy/diamonds/internal/db"
 	"github.com/diamondsacademy/diamonds/internal/i18n"
 	"github.com/diamondsacademy/diamonds/internal/logger"
+	"github.com/diamondsacademy/diamonds/internal/oauth"
 	"github.com/diamondsacademy/diamonds/internal/server"
 	"github.com/diamondsacademy/diamonds/internal/session"
 )
@@ -65,11 +66,18 @@ func main() {
 
 	sm := session.New(sessionConn, cfg.SessionLifetime, !cfg.IsDev())
 
+	googleOAuthCfg := oauth.NewGoogleProvider(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
+	appleProvider := oauth.NewAppleProvider(cfg.AppleTeamID, cfg.AppleServiceID, cfg.AppleKeyID, cfg.ApplePrivateKey, cfg.AppleRedirectURL)
+	instagramProvider := oauth.NewInstagramProvider(cfg.InstagramClientID, cfg.InstagramClientSecret, cfg.InstagramRedirectURL)
+
 	r := server.NewRouter(server.Deps{
-		Logger:  log,
-		DB:      conn,
-		SM:      sm,
-		AuthSvc: authSvc,
+		Logger:            log,
+		DB:                conn,
+		SM:                sm,
+		AuthSvc:           authSvc,
+		GoogleOAuth:       googleOAuthCfg,
+		AppleProvider:     appleProvider,
+		InstagramProvider: instagramProvider,
 	})
 
 	srv := &http.Server{
