@@ -17,11 +17,39 @@ import (
 
 // AppleUserInfo represents the user data returned by Apple after token exchange.
 // Apple returns the user info only on the FIRST authentication for a given app.
-// On subsequent logins, only the `sub` (user ID) is stable — name/email come from the ID token.
+// On subsequent logins, only the `sub` (user ID) is stable — name comes from the
+// form_post body `user` field.
 type AppleUserInfo struct {
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+// ParseAppleUserName extracts the full name from Apple's `user` JSON object.
+// Apple sends this in the form_post body ONLY on first authorization.
+// Format: {"name":{"firstName":"Ender","lastName":"Altıntaş"},"email":"..."}
+func ParseAppleUserName(userJSON string) string {
+	var payload struct {
+		Name struct {
+			FirstName string `json:"firstName"`
+			LastName  string `json:"lastName"`
+		} `json:"name"`
+	}
+	if err := json.Unmarshal([]byte(userJSON), &payload); err != nil {
+		return ""
+	}
+	fn := strings.TrimSpace(payload.Name.FirstName)
+	ln := strings.TrimSpace(payload.Name.LastName)
+	if fn == "" && ln == "" {
+		return ""
+	}
+	if fn == "" {
+		return ln
+	}
+	if ln == "" {
+		return fn
+	}
+	return fn + " " + ln
 }
 
 // AppleProvider holds the configuration needed for Sign In with Apple.

@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	oauthStateLen        = 32
-	oauthStateSessionKey = "oauth_state"
+	oauthStateLen          = 32
+	oauthStateCookieName   = "oauth_state"
+	oauthStateCookieMaxAge = 600 // 10 minutes
 )
 
 // OAuthHandler wraps the session manager, auth service, and per-provider configs.
@@ -45,7 +46,7 @@ func (h *OAuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	h.SM.Put(r.Context(), oauthStateSessionKey, state)
+	setOAuthStateCookie(w, state)
 	http.Redirect(w, r, h.Google.AuthCodeURL(state), http.StatusFound)
 }
 
@@ -54,14 +55,14 @@ func (h *OAuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "google auth not configured", http.StatusServiceUnavailable)
 		return
 	}
-	expectedState := h.SM.GetString(r.Context(), oauthStateSessionKey)
-	h.SM.Remove(r.Context(), oauthStateSessionKey)
+	expectedState := getOAuthStateCookie(r)
+	clearOAuthStateCookie(w)
 
 	queryState := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
 
 	if expectedState == "" || queryState != expectedState {
-		slog.Warn("oauth state mismatch", "expected", expectedState, "got", queryState)
+		slog.Warn("google oauth state mismatch", "expected_len", len(expectedState), "got_len", len(queryState))
 		http.Error(w, "invalid oauth state", http.StatusBadRequest)
 		return
 	}
@@ -100,7 +101,7 @@ func (h *OAuthHandler) AppleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	h.SM.Put(r.Context(), oauthStateSessionKey, state)
+	setOAuthStateCookie(w, state)
 	http.Redirect(w, r, h.Apple.AuthCodeURL(state), http.StatusFound)
 }
 
@@ -109,16 +110,23 @@ func (h *OAuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/?error=apple_not_configured", http.StatusSeeOther)
 		return
 	}
-	expectedState := h.SM.GetString(r.Context(), oauthStateSessionKey)
-	h.SM.Remove(r.Context(), oauthStateSessionKey)
 
-	// Apple uses form_post response_mode, so code comes from POST body
+	expectedState := getOAuthStateCookie(r)
+	clearOAuthStateCookie(w)
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	queryState := r.FormValue("state")
 	code := r.FormValue("code")
+
+	slog.Info("apple callback debug",
+		"expected_state_len", len(expectedState),
+		"query_state_len", len(queryState),
+		"states_match", expectedState == queryState,
+		"has_code", code != "",
+	)
 
 	if expectedState == "" || queryState != expectedState {
 		slog.Warn("apple oauth state mismatch")
@@ -131,6 +139,12 @@ func (h *OAuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Apple sends user info (name) ONLY on first login in the form_post body.
+	var appleName string
+	if userJSON := r.FormValue("user"); userJSON != "" {
+		appleName = oauth.ParseAppleUserName(userJSON)
+	}
+
 	userInfo, err := h.Apple.ExchangeAppleCode(code)
 	if err != nil {
 		slog.Error("apple oauth exchange failed", "err", err)
@@ -139,7 +153,10 @@ func (h *OAuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := userInfo.Email
-	name := userInfo.Name
+	name := appleName
+	if name == "" {
+		name = userInfo.Name
+	}
 	if email == "" {
 		email = userInfo.Sub + "@appleid.user"
 	}
@@ -169,7 +186,7 @@ func (h *OAuthHandler) InstagramLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	h.SM.Put(r.Context(), oauthStateSessionKey, state)
+	setOAuthStateCookie(w, state)
 	http.Redirect(w, r, h.Instagram.Config.AuthCodeURL(state), http.StatusFound)
 }
 
@@ -178,8 +195,8 @@ func (h *OAuthHandler) InstagramCallback(w http.ResponseWriter, r *http.Request)
 		http.Redirect(w, r, "/?error=instagram_not_configured", http.StatusSeeOther)
 		return
 	}
-	expectedState := h.SM.GetString(r.Context(), oauthStateSessionKey)
-	h.SM.Remove(r.Context(), oauthStateSessionKey)
+	expectedState := getOAuthStateCookie(r)
+	clearOAuthStateCookie(w)
 
 	queryState := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
@@ -216,7 +233,7 @@ func (h *OAuthHandler) InstagramCallback(w http.ResponseWriter, r *http.Request)
 	h.loginUser(w, r, u)
 }
 
-// ---- Shared login helper ----
+// ---- Shared helpers ----
 
 func (h *OAuthHandler) loginUser(w http.ResponseWriter, r *http.Request, u *auth.User) {
 	if err := h.SM.RenewToken(r.Context()); err != nil {
@@ -227,7 +244,7 @@ func (h *OAuthHandler) loginUser(w http.ResponseWriter, r *http.Request, u *auth
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
 	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
-	h.SM.Put(r.Context(), session.KeyAccessGranted, true)
+	// access_granted is NOT set here — user must enter access code after login
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -238,4 +255,40 @@ func generateState() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// setOAuthStateCookie sets a standalone cookie for the OAuth state.
+// Uses SameSite=None + Secure for Apple form_post compatibility.
+func setOAuthStateCookie(w http.ResponseWriter, state string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    state,
+		Path:     "/",
+		MaxAge:   oauthStateCookieMaxAge,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
+}
+
+// getOAuthStateCookie reads the OAuth state cookie from the request.
+func getOAuthStateCookie(r *http.Request) string {
+	c, err := r.Cookie(oauthStateCookieName)
+	if err != nil {
+		return ""
+	}
+	return c.Value
+}
+
+// clearOAuthStateCookie removes the OAuth state cookie.
+func clearOAuthStateCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
 }

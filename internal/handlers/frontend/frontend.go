@@ -48,16 +48,22 @@ func (h *Handler) sidebarFromSession(r *http.Request) components.SidebarProps {
 }
 
 // GateLogin renders the main login page (Google/Apple + access code).
-// If the user is already authenticated, redirects to dashboard.
+// If the user is already fully authenticated (access granted), redirects to dashboard.
+// If the user has a session but no access code yet, shows the access code form.
 func (h *Handler) GateLogin(w http.ResponseWriter, r *http.Request) {
 	granted := h.SM.GetBool(r.Context(), session.KeyAccessGranted)
 	role := h.SM.GetString(r.Context(), session.KeyRole)
+	userID := h.SM.GetInt64(r.Context(), session.KeyUserID)
 
-	// Already authenticated? Show dashboard.
+	// Fully authenticated? Show dashboard.
 	if granted || role == "admin" {
 		h.Dashboard(w, r)
 		return
 	}
+
+	// Authenticated via Google/Apple but no access code yet?
+	// Show access code form (keep them logged in, just need the code).
+	needsAccessCode := userID != 0
 
 	// Check for error from OAuth callback
 	errorMsg := ""
@@ -65,24 +71,23 @@ func (h *Handler) GateLogin(w http.ResponseWriter, r *http.Request) {
 	case "google_denied":
 		errorMsg = "Google ile giriş iptal edildi."
 	case "google_exchange":
-		errorMsg = "Google ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+		errorMsg = "Google ile giriş sırasında bir hata oluştu."
 	case "apple_denied":
 		errorMsg = "Apple ile giriş iptal edildi."
 	case "apple_exchange":
-		errorMsg = "Apple ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+		errorMsg = "Apple ile giriş sırasında bir hata oluştu."
 	case "apple_not_configured":
-		errorMsg = "Apple ile giriş henüz yapılandırılmadı. Lütfen Google ile devam edin."
-	case "instagram_denied":
-		errorMsg = "Instagram ile giriş iptal edildi."
-	case "instagram_exchange":
-		errorMsg = "Instagram ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin."
+		errorMsg = "Apple ile giriş henüz yapılandırılmadı."
 	case "instagram_not_configured":
-		errorMsg = "Instagram ile giriş henüz yapılandırılmadı. Lütfen Google ile devam edin."
+		errorMsg = "Instagram ile giriş henüz yapılandırılmadı."
 	case "user_creation":
 		errorMsg = "Hesap oluşturulamadı. Lütfen tekrar deneyin."
 	}
 
-	render(w, r, pages.GateLogin(pages.GateLoginProps{Error: errorMsg}))
+	render(w, r, pages.GateLogin(pages.GateLoginProps{
+		Error:           errorMsg,
+		NeedsAccessCode: needsAccessCode,
+	}))
 }
 
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {

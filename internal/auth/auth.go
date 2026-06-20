@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"time"
@@ -232,7 +234,14 @@ func (s *Service) FindOrCreateByEmail(ctx context.Context, email, name string) (
 		return nil, err
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(email+time.Now().String()), bcrypt.DefaultCost)
+	// Generate a short random password (never used — login is via OAuth).
+	// Must be ≤72 bytes for bcrypt. Use hex-encoded random bytes.
+	randBytes := make([]byte, 16)
+	if _, err := rand.Read(randBytes); err != nil {
+		return nil, err
+	}
+	randomPass := hex.EncodeToString(randBytes) // 32 chars, well under 72 bytes
+	hash, err := bcrypt.GenerateFromPassword([]byte(randomPass), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}

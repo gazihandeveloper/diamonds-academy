@@ -66,8 +66,20 @@ func main() {
 
 	sm := session.New(sessionConn, cfg.SessionLifetime, !cfg.IsDev())
 
+	// Load Apple private key from file if path is configured
+	var applePrivateKey string
+	if cfg.ApplePrivateKeyPath != "" {
+		keyBytes, err := os.ReadFile(cfg.ApplePrivateKeyPath)
+		if err != nil {
+			log.Warn("apple private key file read failed", slog.String("path", cfg.ApplePrivateKeyPath), slog.String("err", err.Error()))
+		} else {
+			applePrivateKey = string(keyBytes)
+			log.Info("apple private key loaded", slog.String("path", cfg.ApplePrivateKeyPath))
+		}
+	}
+
 	googleOAuthCfg := oauth.NewGoogleProvider(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
-	appleProvider := oauth.NewAppleProvider(cfg.AppleTeamID, cfg.AppleServiceID, cfg.AppleKeyID, cfg.ApplePrivateKey, cfg.AppleRedirectURL)
+	appleProvider := oauth.NewAppleProvider(cfg.AppleTeamID, cfg.AppleServiceID, cfg.AppleKeyID, applePrivateKey, cfg.AppleRedirectURL)
 	instagramProvider := oauth.NewInstagramProvider(cfg.InstagramClientID, cfg.InstagramClientSecret, cfg.InstagramRedirectURL)
 
 	r := server.NewRouter(server.Deps{

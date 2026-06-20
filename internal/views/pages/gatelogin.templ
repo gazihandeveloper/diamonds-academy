@@ -5,25 +5,20 @@ import (
 )
 
 type GateLoginProps struct {
-	Code  string
-	Error string
-	Flash string
+	Code            string
+	Error           string
+	Flash           string
+	NeedsAccessCode bool
 }
 
 templ GateLogin(p GateLoginProps) {
 	@layouts.Base("Diamonds Academy", "") {
 		<style>
-			/* ===== MD3 Purple Design Tokens ===== */
 			:root {
 				--md-sys-color-primary: #6750A4;
 				--md-sys-color-on-primary: #FFFFFF;
 				--md-sys-color-primary-container: #EADDFF;
 				--md-sys-color-on-primary-container: #21005D;
-				--md-sys-color-secondary: #625B71;
-				--md-sys-color-on-secondary: #FFFFFF;
-				--md-sys-color-secondary-container: #E8DEF8;
-				--md-sys-color-on-secondary-container: #1D192B;
-				--md-sys-color-tertiary: #7D5260;
 				--md-sys-color-surface: #FFFBFE;
 				--md-sys-color-surface-variant: #E7E0EC;
 				--md-sys-color-on-surface: #1C1B1F;
@@ -33,348 +28,83 @@ templ GateLogin(p GateLoginProps) {
 				--md-sys-color-error: #B3261E;
 				--md-sys-color-error-container: #F9DEDC;
 				--md-sys-color-on-error-container: #410E0B;
-				--md-sys-color-background: #FFFBFE;
-				--md-sys-color-on-background: #1C1B1F;
-
-				--md-sys-shape-corner-extra-small: 4px;
-				--md-sys-shape-corner-small: 8px;
-				--md-sys-shape-corner-medium: 12px;
-				--md-sys-shape-corner-large: 16px;
-				--md-sys-shape-corner-extra-large: 28px;
-				--md-sys-shape-corner-full: 9999px;
-
-				--md-sys-elevation-0: none;
 				--md-sys-elevation-1: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
-				--md-sys-elevation-2: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
-				--md-sys-elevation-3: 0px 4px 8px 3px rgba(0,0,0,0.15), 0px 1px 3px 0px rgba(0,0,0,0.3);
-
-				--md-sys-state-hover: rgba(103,80,164,0.08);
-				--md-sys-state-focus: rgba(103,80,164,0.12);
-				--md-sys-state-pressed: rgba(103,80,164,0.12);
 			}
 
-			/* ===== MD3 Typography Scale ===== */
-			.md3-display-small { font-size: 2.25rem; font-weight: 400; line-height: 2.75rem; letter-spacing: 0; }
-			.md3-headline-medium { font-size: 1.75rem; font-weight: 400; line-height: 2.25rem; letter-spacing: 0; }
-			.md3-title-large { font-size: 1.375rem; font-weight: 400; line-height: 1.75rem; letter-spacing: 0; }
-			.md3-title-medium { font-size: 1rem; font-weight: 500; line-height: 1.5rem; letter-spacing: 0.009375em; }
-			.md3-title-small { font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; letter-spacing: 0.00625em; }
-			.md3-label-large { font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; letter-spacing: 0.00625em; }
-			.md3-label-medium { font-size: 0.75rem; font-weight: 500; line-height: 1rem; letter-spacing: 0.03125em; }
-			.md3-body-large { font-size: 1rem; font-weight: 400; line-height: 1.5rem; letter-spacing: 0.03125em; }
-			.md3-body-medium { font-size: 0.875rem; font-weight: 400; line-height: 1.25rem; letter-spacing: 0.015625em; }
-			.md3-body-small { font-size: 0.75rem; font-weight: 400; line-height: 1rem; letter-spacing: 0.025em; }
-
-			/* ===== MD3 Page Background ===== */
 			.md3-login-bg {
-				min-height: 100vh;
-				min-height: 100dvh;
+				min-height: 100vh; min-height: 100dvh;
 				background: linear-gradient(180deg, #F7F2FF 0%, #FFFBFE 40%);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				padding: 1rem;
+				display: flex; align-items: center; justify-content: center; padding: 1rem;
 			}
-
-			/* ===== MD3 Surface Card ===== */
 			.md3-surface {
 				background: var(--md-sys-color-surface);
-				border-radius: var(--md-sys-shape-corner-extra-large);
-				padding: 2.5rem 2rem;
-				width: 100%;
-				max-width: 28rem;
+				border-radius: 28px; padding: 2.5rem 2rem;
+				width: 100%; max-width: 28rem;
 				box-shadow: var(--md-sys-elevation-1);
 			}
-
-			/* ===== MD3 Filled Tonal Button (Purple) ===== */
-			.md3-filled-tonal-button {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: 0.5rem;
-				height: 3.5rem;
-				padding: 0 1.5rem;
-				border: none;
-				border-radius: var(--md-sys-shape-corner-full);
-				background: var(--md-sys-color-primary-container);
-				color: var(--md-sys-color-on-primary-container);
-				font-family: inherit;
-				font-size: 0.875rem;
-				font-weight: 500;
-				line-height: 1.25rem;
-				letter-spacing: 0.00625em;
-				cursor: pointer;
-				text-decoration: none;
-				transition: box-shadow 0.2s ease, background 0.2s ease;
-				position: relative;
-				overflow: hidden;
-				width: 100%;
-			}
-			.md3-filled-tonal-button:hover {
-				box-shadow: var(--md-sys-elevation-1);
-				background: linear-gradient(0deg, var(--md-sys-state-hover), var(--md-sys-color-primary-container));
-			}
-			.md3-filled-tonal-button:active {
-				background: linear-gradient(0deg, var(--md-sys-state-pressed), var(--md-sys-color-primary-container));
-			}
-
-			/* ===== MD3 Filled Button ===== */
-			.md3-filled-button {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: 0.5rem;
-				height: 3.5rem;
-				padding: 0 1.5rem;
-				border: none;
-				border-radius: var(--md-sys-shape-corner-full);
-				background: var(--md-sys-color-primary);
-				color: var(--md-sys-color-on-primary);
-				font-family: inherit;
-				font-size: 0.875rem;
-				font-weight: 500;
-				line-height: 1.25rem;
-				letter-spacing: 0.00625em;
-				cursor: pointer;
-				text-decoration: none;
-				transition: box-shadow 0.2s ease, background 0.2s ease;
-				position: relative;
-				overflow: hidden;
-				width: 100%;
-			}
-			.md3-filled-button:hover {
-				box-shadow: var(--md-sys-elevation-1);
-				background: linear-gradient(0deg, var(--md-sys-state-hover), var(--md-sys-color-primary));
-			}
-			.md3-filled-button:active {
-				background: linear-gradient(0deg, var(--md-sys-state-pressed), var(--md-sys-color-primary));
-			}
-
-			/* ===== MD3 Outlined Button ===== */
 			.md3-outlined-button {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: 0.75rem;
-				height: 3.5rem;
-				padding: 0 1.5rem;
+				display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;
+				height: 3.5rem; padding: 0 1.5rem;
 				border: 1px solid var(--md-sys-color-outline);
-				border-radius: var(--md-sys-shape-corner-full);
-				background: transparent;
+				border-radius: 9999px; background: transparent;
 				color: var(--md-sys-color-on-surface);
-				font-family: inherit;
-				font-size: 0.875rem;
-				font-weight: 500;
-				line-height: 1.25rem;
-				letter-spacing: 0.00625em;
-				cursor: pointer;
-				text-decoration: none;
-				transition: border-color 0.2s ease, background 0.2s ease;
-				position: relative;
-				overflow: hidden;
-				width: 100%;
+				font-size: 0.875rem; font-weight: 500; line-height: 1.25rem;
+				cursor: pointer; text-decoration: none;
+				transition: border-color 0.2s, background 0.2s; overflow: hidden; width: 100%;
 			}
-			.md3-outlined-button:hover {
-				background: var(--md-sys-state-hover);
-				border-color: var(--md-sys-color-on-surface);
+			.md3-outlined-button:hover { background: rgba(103,80,164,0.08); }
+			.md3-filled-button {
+				display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+				height: 3.5rem; padding: 0 1.5rem; border: none;
+				border-radius: 9999px; background: var(--md-sys-color-primary);
+				color: var(--md-sys-color-on-primary);
+				font-size: 0.875rem; font-weight: 500; line-height: 1.25rem;
+				cursor: pointer; text-decoration: none;
+				transition: box-shadow 0.2s, background 0.2s; overflow: hidden; width: 100%;
 			}
-			.md3-outlined-button:active {
-				background: var(--md-sys-state-pressed);
-			}
-			.md3-outlined-button:disabled,
-			.md3-outlined-button[aria-disabled="true"] {
-				opacity: 0.38;
-				pointer-events: none;
-				cursor: not-allowed;
-			}
-
-			/* ===== MD3 Outlined Text Field ===== */
-			.md3-text-field {
-				position: relative;
-				width: 100%;
-			}
+			.md3-filled-button:hover { box-shadow: var(--md-sys-elevation-1); }
+			.md3-text-field { position: relative; width: 100%; }
 			.md3-text-field-input {
-				width: 100%;
-				height: 3.5rem;
-				padding: 1.5rem 1rem 0.5rem 1rem;
+				width: 100%; height: 3.5rem; padding: 1.5rem 1rem 0.5rem 1rem;
 				border: 1px solid var(--md-sys-color-outline);
-				border-radius: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small) 0 0;
-				background: transparent;
-				color: var(--md-sys-color-on-surface);
-				font-family: inherit;
-				font-size: 1rem;
-				font-weight: 400;
-				line-height: 1.5rem;
-				letter-spacing: 0.03125em;
-				outline: none;
-				transition: border-color 0.2s ease, box-shadow 0.2s ease;
-				box-sizing: border-box;
-				text-align: center;
-				letter-spacing: 0.4em;
+				border-radius: 4px 4px 0 0; background: transparent;
+				color: var(--md-sys-color-on-surface); font-size: 1rem;
+				outline: none; transition: border-color 0.2s; box-sizing: border-box;
+				text-align: center; letter-spacing: 0.4em;
 			}
-			.md3-text-field-input:focus {
-				border-color: var(--md-sys-color-primary);
-				border-width: 2px;
-				padding: 1.5rem 0.9375rem 0.5rem 0.9375rem;
-			}
-			.md3-text-field-input::placeholder {
-				color: var(--md-sys-color-on-surface-variant);
-				opacity: 0.6;
-				letter-spacing: 0.4em;
-			}
+			.md3-text-field-input:focus { border-color: var(--md-sys-color-primary); border-width: 2px; padding: 1.5rem 0.9375rem 0.5rem 0.9375rem; }
 			.md3-text-field-label {
-				position: absolute;
-				top: 1.25rem;
-				left: 1rem;
-				right: 1rem;
-				text-align: center;
+				position: absolute; top: 1.25rem; left: 1rem; right: 1rem; text-align: center;
 				color: var(--md-sys-color-on-surface-variant);
-				font-family: inherit;
-				font-size: 0.75rem;
-				font-weight: 500;
-				line-height: 1rem;
-				letter-spacing: 0.03125em;
-				pointer-events: none;
-				transition: all 0.2s ease;
+				font-size: 0.75rem; font-weight: 500; pointer-events: none;
 			}
-			.md3-text-field-input:focus ~ .md3-text-field-label,
-			.md3-text-field-input:not(:placeholder-shown) ~ .md3-text-field-label {
-				top: 0.5rem;
-				font-size: 0.75rem;
-				color: var(--md-sys-color-primary);
-			}
-			.md3-text-field-supporting {
-				display: flex;
-				align-items: center;
-				min-height: 1.25rem;
-				padding: 0.25rem 1rem 0 1rem;
-				font-size: 0.75rem;
-				font-weight: 400;
-				line-height: 1rem;
-				letter-spacing: 0.025em;
-				color: var(--md-sys-color-on-surface-variant);
-			}
-			.md3-text-field-supporting.error {
-				color: var(--md-sys-color-error);
-			}
-
-			/* ===== MD3 Divider ===== */
-			.md3-divider {
-				display: flex;
-				align-items: center;
-				gap: 1rem;
-				margin: 1.5rem 0;
-			}
-			.md3-divider::before,
-			.md3-divider::after {
-				content: '';
-				flex: 1;
-				height: 1px;
-				background: var(--md-sys-color-outline-variant);
-			}
-			.md3-divider-text {
-				color: var(--md-sys-color-on-surface-variant);
-				font-size: 0.75rem;
-				font-weight: 500;
-				line-height: 1rem;
-				letter-spacing: 0.03125em;
-			}
-
-			/* ===== MD3 Banner (error/success) ===== */
+			.md3-text-field-input:focus ~ .md3-text-field-label { top: 0.5rem; font-size: 0.75rem; color: var(--md-sys-color-primary); }
+			.md3-text-field-supporting { min-height: 1.25rem; padding: 0.25rem 1rem 0 1rem; font-size: 0.75rem; color: var(--md-sys-color-on-surface-variant); }
 			.md3-banner {
-				display: flex;
-				align-items: flex-start;
-				gap: 0.75rem;
-				padding: 0.75rem 1rem;
-				border-radius: var(--md-sys-shape-corner-medium);
-				margin-bottom: 1.5rem;
-				font-size: 0.875rem;
-				font-weight: 400;
-				line-height: 1.25rem;
-				letter-spacing: 0.015625em;
+				display: flex; align-items: flex-start; gap: 0.75rem;
+				padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 1.5rem;
+				font-size: 0.875rem; line-height: 1.25rem;
 			}
-			.md3-banner.error {
-				background: var(--md-sys-color-error-container);
-				color: var(--md-sys-color-on-error-container);
-			}
-			.md3-banner.success {
-				background: #E8F5E9;
-				color: #1B5E20;
-			}
-
-			/* ===== MD3 Google "G" icon replacement with outlined style ===== */
-			.md3-google-icon {
-				width: 1.25rem;
-				height: 1.25rem;
-				flex-shrink: 0;
-			}
-
-			/* ===== Diamond Logo in MD3 Purple ===== */
-			.md3-logo-container {
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				margin-bottom: 2rem;
-			}
-
-			/* ===== Ripple effect ===== */
-			.md3-ripple {
-				position: relative;
-				overflow: hidden;
-			}
+			.md3-banner.error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+			.md3-banner.success { background: #E8F5E9; color: #1B5E20; }
+			.md3-logo-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem; }
+			.md3-headline-medium { font-size: 1.75rem; font-weight: 400; line-height: 2.25rem; }
+			.md3-label-medium { font-size: 0.75rem; font-weight: 500; line-height: 1rem; }
+			.md3-body-small { font-size: 0.75rem; font-weight: 400; line-height: 1rem; }
 		</style>
 
 		<div class="md3-login-bg">
 			<div class="md3-surface">
 				<!-- Logo -->
 				<div class="md3-logo-container">
-					<svg width="88" height="88" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<svg width="88" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<defs>
-							<linearGradient id="d-top" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stop-color="#EADDFF"/>
-								<stop offset="100%" stop-color="#D0BCFF"/>
-							</linearGradient>
-							<linearGradient id="d-mid" x1="0" y1="0" x2="1" y2="0">
+							<linearGradient id="dgr" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
 								<stop offset="0%" stop-color="#D0BCFF"/>
-								<stop offset="50%" stop-color="#B794F4"/>
-								<stop offset="100%" stop-color="#9B6FE8"/>
-							</linearGradient>
-							<linearGradient id="d-left" x1="0" y1="0" x2="1" y2="1">
-								<stop offset="0%" stop-color="#6750A4"/>
-								<stop offset="100%" stop-color="#381E72"/>
-							</linearGradient>
-							<linearGradient id="d-right" x1="1" y1="0" x2="0" y2="1">
-								<stop offset="0%" stop-color="#7C5CBF"/>
-								<stop offset="100%" stop-color="#4A2880"/>
-							</linearGradient>
-							<linearGradient id="d-shine" x1="0" y1="0" x2="1" y2="1">
-								<stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
-								<stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+								<stop offset="100%" stop-color="#6750A4"/>
 							</linearGradient>
 						</defs>
-						<!-- Table (top flat face) -->
-						<polygon points="50,8 68,24 50,30 32,24" fill="url(#d-top)"/>
-						<!-- Crown left facet -->
-						<polygon points="50,8 32,24 20,40 50,30" fill="url(#d-shine)"/>
-						<!-- Crown right facet -->
-						<polygon points="50,8 68,24 80,40 50,30" fill="url(#d-mid)"/>
-						<!-- Crown front-left facet -->
-						<polygon points="32,24 20,40 50,48 50,30" fill="url(#d-left)"/>
-						<!-- Crown front-right facet -->
-						<polygon points="68,24 80,40 50,48 50,30" fill="url(#d-right)"/>
-						<!-- Pavilion left -->
-						<polygon points="20,40 50,48 50,88 8,52" fill="url(#d-left)" opacity="0.85"/>
-						<!-- Pavilion right -->
-						<polygon points="80,40 50,48 50,88 92,52" fill="url(#d-right)" opacity="0.75"/>
-						<!-- Pavilion bottom-left -->
-						<polygon points="20,40 8,52 50,88" fill="url(#d-left)" opacity="0.5"/>
-						<!-- Pavilion bottom-right -->
-						<polygon points="80,40 92,52 50,88" fill="url(#d-right)" opacity="0.4"/>
-						<!-- Center keel line -->
-						<line x1="50" y1="48" x2="50" y2="88" stroke="#381E72" stroke-opacity="0.5" stroke-width="0.5"/>
-						<!-- Girdle outline -->
-						<polygon points="50,8 68,24 80,40 50,48 50,88 92,52 50,48 20,40 8,52 50,88 50,48 32,24"
-							fill="none" stroke="#381E72" stroke-opacity="0.15" stroke-width="0.3"/>
+						<path fill="url(#dgr)" d="M6 2L2 8l10 14L22 8l-4-6z"/>
 					</svg>
 					<div class="text-center mt-4">
 						<div class="md3-headline-medium" style="color: var(--md-sys-color-on-surface); font-weight: 700; letter-spacing: 0.15em;">DIAMONDS</div>
@@ -382,61 +112,50 @@ templ GateLogin(p GateLoginProps) {
 					</div>
 				</div>
 
-				<!-- Error Banner -->
 				if p.Error != "" {
 					<div class="md3-banner error">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
-							<path d="M11 15h2v2h-2v-2zm0-8h2v6h-2V7zm1-5C6.47 2 2 6.5 2 12s4.47 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-						</svg>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;"><path d="M11 15h2v2h-2v-2zm0-8h2v6h-2V7zm1-5C6.47 2 2 6.5 2 12s4.47 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
 						<span>{ p.Error }</span>
 					</div>
 				}
-
-				<!-- Success Banner -->
 				if p.Flash != "" {
 					<div class="md3-banner success">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
-							<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-						</svg>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
 						<span>{ p.Flash }</span>
 					</div>
 				}
 
-				<!-- Sosyal Giriş Butonları -->
-				<div style="display: flex; flex-direction: column; gap: 0.75rem;">
-					<!-- Google -->
-					<a href="/auth/google" class="md3-outlined-button">
-						<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-							<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-							<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-							<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-							<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-						</svg>
-						Google ile devam et
-					</a>
-
-					<!-- Apple -->
-					<a href="/auth/apple" class="md3-outlined-button">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-							<path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-						</svg>
-						Apple ile devam et
-					</a>
-
-					<!-- Instagram / Facebook -->
-					<a href="/auth/instagram" class="md3-outlined-button" style="border-color: transparent; background: linear-gradient(135deg, #833AB4, #FD1D1D, #F77737); color: #FFFFFF;">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-							<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-						</svg>
-						Instagram ile devam et
-					</a>
-				</div>
-
-				<!-- Alt bilgi -->
-				<p class="md3-body-small" style="text-align: center; margin-top: 2rem; color: var(--md-sys-color-on-surface-variant); opacity: 0.6;">
-					Giriş yaparak <a href="#" style="color: var(--md-sys-color-primary); text-decoration: none;">kullanım koşullarını</a> kabul etmiş olursunuz.
-				</p>
-
+				if p.NeedsAccessCode {
+					<div class="md3-banner success">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+						<span>Giriş başarılı! Devam etmek için erişim kodunuzu girin.</span>
+					</div>
+					<form method="POST" action="/access">
+						<div class="md3-text-field" style="margin-bottom: 0.5rem;">
+							<input type="text" name="code" required autocomplete="off" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" value={ p.Code } placeholder=" " class="md3-text-field-input"/>
+							<label class="md3-text-field-label">Erişim Kodu</label>
+						</div>
+						<div class="md3-text-field-supporting">4 haneli kodunuzu girin</div>
+						<button type="submit" class="md3-filled-button" style="margin-top: 1rem;">
+							Erişimi Doğrula
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"/></svg>
+						</button>
+					</form>
+				} else {
+					<div style="display: flex; flex-direction: column; gap: 0.75rem;">
+						<a href="/auth/google" class="md3-outlined-button">
+							<svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+							Google ile devam et
+						</a>
+						<a href="/auth/apple" class="md3-outlined-button">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+							Apple ile devam et
+						</a>
+					</div>
+					<p class="md3-body-small" style="text-align: center; margin-top: 2rem; color: var(--md-sys-color-on-surface-variant); opacity: 0.6;">
+						Giriş yaparak kullanım koşullarını kabul etmiş olursunuz.
+					</p>
+				}
 			</div>
 		</div>
 	}

@@ -26,7 +26,8 @@ type Config struct {
 	AppleTeamID          string
 	AppleServiceID       string
 	AppleKeyID           string
-	ApplePrivateKey      string
+	ApplePrivateKeyPath   string
+	ApplePrivateKey       string // loaded from file at startup
 	AppleRedirectURL     string
 	InstagramClientID    string
 	InstagramClientSecret string
@@ -61,11 +62,11 @@ func Load() (*Config, error) {
 		GoogleClientID:      getenv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:  getenv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectURL:   getenv("GOOGLE_REDIRECT_URL", ""),
-		AppleTeamID:         getenv("APPLE_TEAM_ID", ""),
-		AppleServiceID:      getenv("APPLE_SERVICE_ID", ""),
-		AppleKeyID:          getenv("APPLE_KEY_ID", ""),
-		ApplePrivateKey:     getenv("APPLE_PRIVATE_KEY", ""),
-		AppleRedirectURL:    getenv("APPLE_REDIRECT_URL", ""),
+		AppleTeamID:          getenv("APPLE_TEAM_ID", ""),
+		AppleServiceID:       getenv("APPLE_SERVICE_ID", ""),
+		AppleKeyID:           getenv("APPLE_KEY_ID", ""),
+		ApplePrivateKeyPath:  getenv("APPLE_PRIVATE_KEY_PATH", ""),
+		AppleRedirectURL:     getenv("APPLE_REDIRECT_URL", ""),
 		InstagramClientID:   getenv("INSTAGRAM_CLIENT_ID", ""),
 		InstagramClientSecret: getenv("INSTAGRAM_CLIENT_SECRET", ""),
 		InstagramRedirectURL: getenv("INSTAGRAM_REDIRECT_URL", ""),
