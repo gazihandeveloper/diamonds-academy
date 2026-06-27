@@ -20,6 +20,7 @@ const (
 	KeyTheme              = "theme"
 	KeyLocale             = "locale"
 	KeyFlash              = "flash"
+	KeyNameNeeded         = "name_needed"
 )
 
 func New(db *sql.DB, lifetime time.Duration, secure bool) *scs.SessionManager {

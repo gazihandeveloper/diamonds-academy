@@ -103,5 +103,7 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	// Force name entry for anonymous users
+	h.SM.Put(r.Context(), session.KeyNameNeeded, true)
+	http.Redirect(w, r, "/set-name", http.StatusSeeOther)
 }

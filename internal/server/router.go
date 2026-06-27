@@ -67,6 +67,10 @@ func NewRouter(d Deps) http.Handler {
 	// Root: login page (Google/Apple + access code)
 	web.Get("/", front.GateLogin)
 
+	// Name entry: OAuth users with placeholder names must enter real name first
+	web.Get("/set-name", front.SetNameGet)
+	web.Post("/set-name", front.SetNamePost)
+
 	// Legacy access page redirects to root
 	web.Get("/access", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusMovedPermanently)

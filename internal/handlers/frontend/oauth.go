@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/diamondsacademy/diamonds/internal/auth"
@@ -246,7 +247,28 @@ func (h *OAuthHandler) loginUser(w http.ResponseWriter, r *http.Request, u *auth
 	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
 	// access_granted is NOT set here — user must enter access code after login
 
+	// If the OAuth provider didn't give us a real name, force the user to enter one.
+	if isOAuthPlaceholderName(u.Name) {
+		h.SM.Put(r.Context(), session.KeyNameNeeded, true)
+		http.Redirect(w, r, "/set-name", http.StatusSeeOther)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// isOAuthPlaceholderName returns true if the name looks like a system-generated
+// placeholder rather than a real person name (e.g. "Ziyaretçi", "Apple User",
+// email-as-name, empty).
+func isOAuthPlaceholderName(name string) bool {
+	if name == "" || name == "Ziyaretçi" || name == "Apple User" {
+		return true
+	}
+	// Email-as-name: contains @ but no spaces
+	if strings.Contains(name, "@") && !strings.Contains(name, " ") {
+		return true
+	}
+	return false
 }
 
 func generateState() (string, error) {

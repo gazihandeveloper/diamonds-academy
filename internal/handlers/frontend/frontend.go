@@ -55,6 +55,22 @@ func (h *Handler) GateLogin(w http.ResponseWriter, r *http.Request) {
 	role := h.SM.GetString(r.Context(), session.KeyRole)
 	userID := h.SM.GetInt64(r.Context(), session.KeyUserID)
 
+	// Logged in via OAuth but name is a placeholder? Force name entry first.
+	if userID != 0 && h.SM.GetBool(r.Context(), session.KeyNameNeeded) {
+		http.Redirect(w, r, "/set-name", http.StatusSeeOther)
+		return
+	}
+
+	// Existing users with placeholder names (e.g. "Ziyaretçi") — force rename.
+	if granted && userID != 0 {
+		name := h.SM.GetString(r.Context(), session.KeyName)
+		if isOAuthPlaceholderName(name) {
+			h.SM.Put(r.Context(), session.KeyNameNeeded, true)
+			http.Redirect(w, r, "/set-name", http.StatusSeeOther)
+			return
+		}
+	}
+
 	// Fully authenticated? Show dashboard.
 	if granted || role == "admin" {
 		h.Dashboard(w, r)
