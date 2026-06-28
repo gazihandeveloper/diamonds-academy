@@ -92,6 +92,14 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	}
 	h.SM.Put(r.Context(), session.KeyAccessGranted, true)
 
+	// Eğer kullanıcı OAuth ile giriş yapmışsa (user_id zaten varsa),
+	// yeni anonim kullanıcı oluşturma — mevcut hesabı kullan.
+	existingID := h.SM.GetInt64(r.Context(), session.KeyUserID)
+	if existingID != 0 {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	// Create anonymous user for progress tracking
 	u, err := h.AuthSvc.CreateAnonymous(r.Context())
 	if err != nil {
@@ -102,6 +110,7 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	h.SM.Put(r.Context(), session.KeyUserID, u.ID)
 	h.SM.Put(r.Context(), session.KeyRole, string(u.Role))
 	h.SM.Put(r.Context(), session.KeyName, u.Name)
+	h.SM.Put(r.Context(), session.KeyEmail, u.Email)
 
 	// Force name entry for anonymous users
 	h.SM.Put(r.Context(), session.KeyNameNeeded, true)
