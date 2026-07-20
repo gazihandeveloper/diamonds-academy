@@ -72,7 +72,7 @@ func (h *AccessHandler) AccessDeactivate(w http.ResponseWriter, r *http.Request)
 func (h *AccessHandler) AccessActivate(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err := h.AccessSvc.Activate(r.Context(), id); err != nil {
-		h.setFlash(r, "Kod aktif edilemedi (süresi dolmuş olabilir).")
+		h.setFlash(r, "Kod aktif edilemedi (bulunamadı veya zaten aktif).")
 	} else {
 		h.setFlash(r, "Kod aktif edildi.")
 	}

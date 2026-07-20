@@ -76,7 +76,7 @@ func (h *AccessHandler) AccessPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Track failed attempt
 		h.SM.Put(r.Context(), session.KeyAccessAttempts, attempts+1)
-		msg := "Geçersiz veya süresi dolmuş erişim kodu."
+		msg := "Geçersiz erişim kodu."
 		if !errors.Is(err, access.ErrInvalidCode) {
 			msg = "Beklenmeyen bir hata oluştu."
 		}

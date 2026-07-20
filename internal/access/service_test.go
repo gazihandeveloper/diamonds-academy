@@ -74,9 +74,9 @@ func TestSetCustomCode_Happy(t *testing.T) {
 	if !code.IsActive {
 		t.Error("new code should be active")
 	}
-	want := time.Now().UTC().AddDate(0, DefaultExpiryMonths, 0)
-	if code.ExpiresAt.Before(want.Add(-5*time.Second)) || code.ExpiresAt.After(want.Add(5*time.Second)) {
-		t.Errorf("expires_at = %v, want ~%v", code.ExpiresAt, want)
+	want := time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+	if !code.ExpiresAt.Equal(want) {
+		t.Errorf("expires_at = %v, want %v", code.ExpiresAt, want)
 	}
 }
 
@@ -249,15 +249,18 @@ func TestValidate_ExpiredCode(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// Insert a code that expired 3 months ago.
+	// Insert a code that expired 3 months ago — expiry is no longer checked.
 	insertCode(t, db, "EXPIRED-KEY", true,
 		time.Now().UTC().AddDate(0, -6, 0), // created 6 months ago
 		time.Now().UTC().AddDate(0, -3, 0), // expired 3 months ago
 	)
 
-	_, err := svc.Validate(ctx, "EXPIRED-KEY")
-	if err != ErrInvalidCode {
-		t.Errorf("error = %v, want %v", err, ErrInvalidCode)
+	got, err := svc.Validate(ctx, "EXPIRED-KEY")
+	if err != nil {
+		t.Fatalf("Validate() error = %v, want nil (expiry no longer checked)", err)
+	}
+	if got.Code != "EXPIRED-KEY" {
+		t.Errorf("code = %q, want %q", got.Code, "EXPIRED-KEY")
 	}
 }
 
@@ -267,15 +270,18 @@ func TestValidate_ExpiredButActive(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// Active flag is 1, but expiry is in the past — should fail.
+	// Active flag is 1, but expiry is in the past — expiry is no longer checked, so it should succeed.
 	insertCode(t, db, "ACTIVE-EXPIRED", true,
 		time.Now().UTC().AddDate(0, -12, 0),
 		time.Now().UTC().AddDate(0, -1, 0),
 	)
 
-	_, err := svc.Validate(ctx, "ACTIVE-EXPIRED")
-	if err != ErrInvalidCode {
-		t.Errorf("error = %v, want %v", err, ErrInvalidCode)
+	got, err := svc.Validate(ctx, "ACTIVE-EXPIRED")
+	if err != nil {
+		t.Fatalf("Validate() error = %v, want nil (expiry no longer checked)", err)
+	}
+	if got.Code != "ACTIVE-EXPIRED" {
+		t.Errorf("code = %q, want %q", got.Code, "ACTIVE-EXPIRED")
 	}
 }
 
@@ -555,15 +561,15 @@ func TestActivate_ExpiredCode(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// Insert a deactivated, expired code.
+	// Insert a deactivated, expired code — expiry no longer blocks activation.
 	id := insertCode(t, db, "OLD-DEACTIVATED", false,
 		time.Now().UTC().AddDate(0, -6, 0),
 		time.Now().UTC().AddDate(0, -3, 0),
 	)
 
 	err := svc.Activate(ctx, id)
-	if err != ErrCodeNotFound {
-		t.Errorf("error = %v, want %v", err, ErrCodeNotFound)
+	if err != nil {
+		t.Fatalf("Activate() error = %v, want nil (expiry no longer blocks activation)", err)
 	}
 }
 
@@ -573,15 +579,15 @@ func TestActivate_ExpiredBoundary(t *testing.T) {
 	svc := NewService(db)
 	ctx := context.Background()
 
-	// Expired 1 second ago — should NOT be activatable.
+	// Expired 1 second ago — expiry no longer blocks activation.
 	id := insertCode(t, db, "BARELY-EXPIRED", false,
 		time.Now().UTC().AddDate(0, -1, 0),
 		time.Now().UTC().Add(-1*time.Second),
 	)
 
 	err := svc.Activate(ctx, id)
-	if err != ErrCodeNotFound {
-		t.Errorf("error = %v, want %v", err, ErrCodeNotFound)
+	if err != nil {
+		t.Fatalf("Activate() error = %v, want nil (expiry no longer blocks activation)", err)
 	}
 }
 

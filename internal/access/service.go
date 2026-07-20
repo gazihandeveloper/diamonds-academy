@@ -13,8 +13,9 @@ var (
 )
 
 const (
-	// DefaultExpiryMonths is the fixed validity period for manually created codes.
-	DefaultExpiryMonths = 1
+	// SentinelExpiry is a far-future date used for all access codes since expiry is disabled.
+	// Codes remain valid indefinitely — deactivation is manual via admin panel.
+	SentinelExpiry = "9999-12-31T00:00:00Z"
 )
 
 // Code represents an access code row.
@@ -55,7 +56,7 @@ func (s *Service) Validate(ctx context.Context, code string) (*Code, error) {
 		return nil, err
 	}
 	c.IsActive = active == 1
-	if !c.IsActive || time.Now().UTC().After(c.ExpiresAt) {
+	if !c.IsActive {
 		return nil, ErrInvalidCode
 	}
 	return &c, nil
@@ -104,8 +105,8 @@ func (s *Service) Deactivate(ctx context.Context, id int64) error {
 func (s *Service) Activate(ctx context.Context, id int64) error {
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE access_codes SET is_active = 1
-		 WHERE id = ? AND is_active = 0 AND expires_at > ?`,
-		id, time.Now().UTC(),
+		 WHERE id = ? AND is_active = 0`,
+		id,
 	)
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func (s *Service) SetCustomCode(ctx context.Context, code string) (*Code, error)
 		return nil, err
 	}
 	now := time.Now().UTC()
-	expires := now.AddDate(0, DefaultExpiryMonths, 0)
+	expires := time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
 	res, err := s.db.ExecContext(ctx,
 		`INSERT INTO access_codes (code, is_active, created_at, expires_at) VALUES (?, 1, ?, ?)`,
 		code, now, expires,

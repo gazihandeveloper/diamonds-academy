@@ -33,8 +33,8 @@ templ Login(p LoginProps) {
 					}
 					<form method="POST" action="/login" class="space-y-4">
 						<div>
-							<label class="cs-label">{ i18n.TC(ctx, "login.email") }</label>
-							<input type="email" name="email" required autofocus value={ p.Email } class="cs-input"/>
+							<label class="cs-label">Kullanıcı Adı</label>
+							<input type="text" name="email" required autofocus value={ p.Email } class="cs-input" autocomplete="username"/>
 						</div>
 						<div>
 							<label class="cs-label">{ i18n.TC(ctx, "login.password") }</label>
